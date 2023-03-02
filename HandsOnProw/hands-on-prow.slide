@@ -6,7 +6,7 @@ Tags: CI/CD, K8s, Prow
 Juan Manuel Parrilla
 Senior Software Engineer, Red Hat
 jparrill@redhat.com
-https://github.com/jparrill/hands-on-prow
+https://github.com/jparrill/HandsOnProw
 @kerbeross
 
 
@@ -25,7 +25,7 @@ https://github.com/jparrill/hands-on-prow
 
 .image img/jparrill_avatar.jpg _ 300
 
-.caption [[https://github.com/jparrill/hands-on-prow][Hands on Prow]] by Juan Manuel Parrilla
+.caption [[https://github.com/jparrill/HandsOnProw][Hands on Prow]] by Juan Manuel Parrilla
 
 * Agenda
 
@@ -39,7 +39,7 @@ https://github.com/jparrill/hands-on-prow
 - References
 
 .background img/background.png
-.caption [[https://github.com/jparrill/hands-on-prow][Hands on Prow]] by Juan Manuel Parrilla
+.caption [[https://github.com/jparrill/HandsOnProw][Hands on Prow]] by Juan Manuel Parrilla
 
 * What is Prow
 
