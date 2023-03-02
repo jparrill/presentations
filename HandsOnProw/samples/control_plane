@@ -1,0 +1,10 @@
+NAME                                READY   STATUS    RESTARTS   AGE
+deck-f958755bc-skq64                1/1     Running   0          2d2h
+deck-f958755bc-v5568                1/1     Running   0          2d2h
+hook-57d5467cbc-6ndvg               1/1     Running   0          10d
+hook-57d5467cbc-k22fm               1/1     Running   0          10d
+horologium-79965ffb5-c29nt          1/1     Running   0          10d
+plank-79646b78fb-mn796              1/1     Running   0          10d
+sinker-796f7df8cb-tdj5b             1/1     Running   0          10d
+statusreconciler-56b668448f-bm7f9   1/1     Running   0          10d
+tide-6d66ddcb4c-gms2t               1/1     Running   0          10d

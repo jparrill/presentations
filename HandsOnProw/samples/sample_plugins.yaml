@@ -1,0 +1,74 @@
+---
+config_updater:                 # Config Updater section
+  maps:
+    prow-config/config.yaml:    # It will take the Config from this path
+      name: config
+    prow-config/jobs/**/*.yaml: # It will take the Jobs from this path
+      name: job-config
+    prow-config/plugins.yaml:   # It will take the Plugins from this path
+      name: plugins
+    prow-config/labels.yaml:    # It will take the Labels from this path
+      name: label-config
+
+plugins:
+  the-shadowmen:        # Organization
+  - size                # Manages the 'size/*' labels per PR
+  - label               # Base plugin for labeling
+  - hold                # Allows to add or remove the 'do-not-merge/hold'
+  - assign              # Assigns or requests reviews from users.
+  - blunderbuss         # Auto-Assign new PRs created to the reviewers.
+  - lifecycle           # Close, reopen, flag and/or unflag an issue or PR as frozen/stale/rotten
+  - verify-owners       # Validates OWNERS files if they are modified in a PR.
+  - wip                 # Applies the 'do-not-merge/wip' Label to pull requests.
+
+  the-shadowmen/prow-devconf:
+  - trigger
+  - owners-label
+  - lgtm
+  - approve
+  - config-updater
+
+  the-shadowmen/kubevirt.github.io:
+  - trigger
+  - owners-label
+  - lgtm
+  - approve
+
+  the-shadowmen/kubevirt-tutorial:
+  - trigger
+  - owners-label
+  - lgtm
+  - approve
+
+external_plugins:
+  the-shadowmen:
+  - name: needs-rebase
+    events:
+      - pull_request
+  - name: cherrypicker
+
+triggers:
+- repos:
+  - the-shadowmen/kubevirtci
+- repos:
+  - the-shadowmen/kubevirt-tutorial
+- repos:
+  - the-shadowmen/prow-devconf
+
+
+approve:
+- repos:
+  - the-shadowmen/kubevirt-tutorial
+  - the-shadowmen/kubevirtci
+  - the-shadowmen/prow-devconf
+  require_self_approval: true
+  lgtm_acts_as_approve: false
+  ignore_review_state: true
+
+lgtm:
+- repos:
+  - the-shadowmen/kubevirt-tutorial
+  - the-shadowmen/kubevirtci
+  - the-shadowmen/prow-devconf
+  review_acts_as_lgtm: true
+

@@ -1,0 +1,5 @@
+NAME                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+service/deck         NodePort    10.104.115.56    <none>        80:30000/TCP     10d
+service/hook         NodePort    10.105.150.158   <none>        8888:30300/TCP   10d
+service/kubernetes   ClusterIP   10.96.0.1        <none>        443/TCP          10d
+service/tide         NodePort    10.109.88.186    <none>        80:30090/TCP     10d

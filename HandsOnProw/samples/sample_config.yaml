@@ -1,0 +1,139 @@
+prowjob_namespace: default
+pod_namespace: test-pods
+log_level: debug
+
+tide:
+  sync_period: 2m
+  merge_method:
+    the-shadowmen/prow-devconf: squash
+    the-shadowmen/kubevirt-tutorial: squash
+    the-shadowmen/kubevirtci: squash
+  queries:
+    - repos:
+        - the-shadowmen/prow-devconf
+        - the-shadowmen/kubevirt-tutorial
+        - the-shadowmen/kubevirtci
+      labels:
+        - lgtm
+        - approved
+      missingLabels:
+        - do-not-merge
+        - do-not-merge/hold
+        - do-not-merge/work-in-progress
+        - do-not-merge/invalid-owners-file
+        - needs-ok-to-test
+        - do-not-merge/release-note-label-needed
+        - needs-rebase
+  pr_status_base_urls:
+    '*': https://prow.kerbeross.dev/pr
+  context_options:
+    from-branch-protection: false
+    skip-unknown-contexts: true
+
+sinker:
+  resync_period: 1m
+  max_prowjob_age: 48h
+  max_pod_age: 48h
+  terminated_pod_ttl: 30m
+
+plank:
+  job_url_template: 'https://prow.kerbeross.dev/view/gcs/kerbeross-prow-storage/{{if eq .Spec.Type "presubmit"}}pr-logs/pull{{else if eq .Spec.Type "batch"}}pr-logs/pull{{else}}logs{{end}}{{if .Spec.Refs}}{{if ne .Spec.Refs.Org ""}}/{{.Spec.Refs.Org}}_{{.Spec.Refs.Repo}}{{end}}{{end}}{{if eq .Spec.Type "presubmit"}}/{{with index .Spec.Refs.Pulls 0}}{{.Number}}{{end}}{{else if eq .Spec.Type "batch"}}/batch{{end}}/{{.Spec.Job}}/{{.Status.BuildID}}/'
+  job_url_prefix_config: 
+    '*': "https://prow.kerbeross.dev/view/gcs/"
+  pod_pending_timeout: 60m
+  default_decoration_configs:
+    '*':
+      timeout: 2h
+      grace_period: 15s
+      utility_images:
+        clonerefs: "gcr.io/k8s-prow/clonerefs:v20200117-903ce628f"
+        initupload: "gcr.io/k8s-prow/initupload:v20200117-903ce628f"
+        entrypoint: "gcr.io/k8s-prow/entrypoint:v20200117-903ce628f"
+        sidecar: "gcr.io/k8s-prow/sidecar:v20200117-903ce628f"
+      gcs_configuration:
+        bucket: "kerbeross-prow-storage"
+        path_strategy: "explicit"
+      gcs_credentials_secret: "gcs"
+
+deck:
+  spyglass:
+    size_limit: 500000000 # 500MB
+    viewers:
+      "started.json|finished.json":
+      - "metadata"
+      "build-log.txt":
+      - "buildlog"
+      "artifacts/junit.*\\.xml":
+      - "junit"
+      "artifacts/filtered.cov":
+      - "coverage"
+
+slack_reporter:
+  job_types_to_report:
+  - presubmit
+  - postsubmit
+  - periodic
+  - batch
+  job_states_to_report:
+  - triggered
+  - pending
+  - success
+  - failure
+  - aborted
+  - error
+  channel: team-kni-community
+  # The template shown below is the default
+  report_template: 'Job {{.Spec.Job}} of type {{.Spec.Type}} ended with state {{.Status.State}}. <{{.Status.URL}}|View logs>'
+
+presets:
+####### Label to allow DIND executions
+- labels:
+    preset-dind-enabled: "true"
+  env:
+  - name: DOCKER_IN_DOCKER_ENABLED
+    value: "true"
+  volumes:
+  - name: docker-graph
+    emptyDir: {}
+  volumeMounts:
+  - name: docker-graph
+    mountPath: /docker-graph
+
+####### Label to allow janitor to pull from Private repos
+- labels:
+    preset-gh-config: "true"
+  volumes:
+  - name: git-config
+    secret:
+        defaultMode: 420
+        secretName: git-config
+  volumeMounts:
+  - name: git-config
+    mountPath: /etc/gitconfig
+    readOnly: true
+
+####### Label to allow Janitor to Push to GitHub
+- labels:
+    preset-gh-pusher: "true"
+  volumes:
+  - name: git-creds
+    secret:
+        defaultMode: 420
+        secretName: git-creds
+  volumeMounts:
+  - name: git-creds
+    mountPath: /etc/git-creds
+    readOnly: true
+
+####### Label for DIND and to Mirror registry
+- labels:
+    preset-docker-mirror: "true"
+  volumes:
+  - name: docker-config
+    configMap:
+      name: docker-daemon-mirror-config
+  volumeMounts:
+  - name: docker-config
+    mountPath: /etc/default
+    readOnly: true
+

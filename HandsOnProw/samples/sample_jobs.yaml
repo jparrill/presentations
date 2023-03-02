@@ -1,0 +1,55 @@
+---
+periodics:
+  - interval: 24h
+    name: kubevirt-io-periodic-link-checker
+    decorate: true      # The pod will be decorated with our special config
+    always_run: true    # Tests always run
+    extra_refs:
+    - org: the-shadowmen
+      repo: kubevirt.github.io
+      base_ref: master
+      path_alias: kubevirt.github.io skip_report: false  # Avoid to report the Job status
+    spec:
+      nodeSelector:
+        region: primary
+      containers:
+        - image: docker.io/library/ruby
+          env:
+            - name: NOKOGIRI_USE_SYSTEM_LIBRARIES
+              value: "true"
+          command: ["/bin/sh", "-c"]
+          args: ["/usr/local/bin/bundle install && bundle exec rake"]
+
+postsubmits:
+  the-shadowmen/kubevirt.github.io:
+    - name: kubevirt-io-postsubmit-link-checker
+      decorate: true      # The pod will be decorated with our special config
+      always_run: true    # Tests always run
+      skip_report: false  # Avoid to report the Job status
+      spec:
+        nodeSelector:
+          region: primary
+        containers:
+          - image: docker.io/library/ruby
+            env:
+              - name: NOKOGIRI_USE_SYSTEM_LIBRARIES
+                value: "true"
+            command: ["/bin/sh", "-c"]
+            args: ["/usr/local/bin/bundle install && bundle exec rake"]
+
+presubmits:
+  the-shadowmen/kubevirt.github.io:
+    - name: kubevirt-io-presubmit-link-checker
+      decorate: true      # The pod will be decorated with our special config
+      always_run: true    # Tests always run
+      skip_report: false  # Avoid to report the Job status
+      spec:
+        nodeSelector:
+          region: primary
+        containers:
+          - image: docker.io/library/ruby
+            env:
+              - name: NOKOGIRI_USE_SYSTEM_LIBRARIES
+                value: "true"
+            command: ["/bin/sh", "-c"]
+            args: ["/usr/local/bin/bundle install && bundle exec rake"]

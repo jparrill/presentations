@@ -1,0 +1,19 @@
+filters:
+  ".*":
+    reviewers:
+      - codificat
+      - jparrill
+      - iranzo
+    approvers:
+      - iranzo
+      - ptrnull
+    emeritus_approvers:
+      - karmab # 10 july 2019
+      - tripledes # 10 july 2019
+## This part is for owner-labels
+  "^_posts/.*":
+    labels:
+      - kind/blog
+  "^_(data|layouts|sass|css|js)/.*":
+    labels:
+      - kind/website
