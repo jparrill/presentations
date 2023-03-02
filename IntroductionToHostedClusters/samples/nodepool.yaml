@@ -1,0 +1,126 @@
+apiVersion: hypershift.openshift.io/v1beta1
+kind: NodePool
+metadata:
+  annotations:
+    hypershift.openshift.io/nodePoolCurrentConfig: 9fef467e
+    hypershift.openshift.io/nodePoolCurrentConfigVersion: 2920318f
+  creationTimestamp: "2023-03-02T12:55:56Z"
+  finalizers:
+  - hypershift.openshift.io/finalizer
+  generation: 1
+  labels:
+    hypershift.openshift.io/auto-created-for-infra: example-wvjw6
+  name: example-wvjw6-us-west-1b
+  namespace: e2e-clusters-ssphq
+  ownerReferences:
+  - apiVersion: hypershift.openshift.io/v1beta1
+    kind: HostedCluster
+    name: example-wvjw6
+    uid: bb160fc1-5769-4549-aa66-9bcf8a78ce8f
+  resourceVersion: "114087"
+  uid: f9035d3f-0b7a-4d17-894f-3d0b920adc6f
+spec:
+  config:
+    - name: config-change-01
+  clusterName: example-wvjw6
+  tuningConfig:
+    - name: tuned-1
+  management:
+    autoRepair: false
+    replace:
+      rollingUpdate:
+        maxSurge: 2
+        maxUnavailable: 1
+      strategy: RollingUpdate
+    upgradeType: Replace
+  nodeDrainTimeout: 0s
+  platform:
+    aws:
+      instanceProfile: example-wvjw6-worker
+      instanceType: m5.large
+      rootVolume:
+        size: 64
+        type: gp3
+      securityGroups:
+      - id: sg-0fcc97607dd2b56ea
+      subnet:
+        id: subnet-0c5eefcd1bf583159
+    type: AWS
+  release:
+    image: quay.io/openshift-release-dev/ocp-release:4.13.0-ec.2-x86_64
+  replicas: 2
+status:
+  conditions:
+  - lastTransitionTime: "2023-03-02T12:55:56Z"
+    observedGeneration: 1
+    reason: AsExpected
+    status: "False"
+    type: AutoscalingEnabled
+  - lastTransitionTime: "2023-03-02T12:55:56Z"
+    observedGeneration: 1
+    reason: AsExpected
+    status: "True"
+    type: UpdateManagementEnabled
+  - lastTransitionTime: "2023-03-02T12:56:30Z"
+    message: 'Using release image: quay.io/openshift-release-dev/ocp-release:4.13.0-ec.2-x86_64'
+    observedGeneration: 1
+    reason: AsExpected
+    status: "True"
+    type: ValidReleaseImage
+  - lastTransitionTime: "2023-03-02T12:56:30Z"
+    message: Bootstrap AMI is "ami-0e93b1051dc8716a4"
+    observedGeneration: 1
+    reason: AsExpected
+    status: "True"
+    type: ValidPlatformImage
+  - lastTransitionTime: "2023-03-02T12:57:45Z"
+    observedGeneration: 1
+    reason: AsExpected
+    status: "True"
+    type: ValidMachineConfig
+  - lastTransitionTime: "2023-03-02T12:58:31Z"
+    message: Payload generated successfully
+    observedGeneration: 1
+    reason: AsExpected
+    status: "True"
+    type: ValidGeneratedPayload
+  - lastTransitionTime: "2023-03-02T13:03:29Z"
+    observedGeneration: 1
+    reason: AsExpected
+    status: "True"
+    type: ReachedIgnitionEndpoint
+  - lastTransitionTime: "2023-03-02T12:57:45Z"
+    observedGeneration: 1
+    reason: AsExpected
+    status: "True"
+    type: ValidTuningConfig
+  - lastTransitionTime: "2023-03-02T12:57:45Z"
+    message: Reconciliation active on resource
+    observedGeneration: 1
+    reason: ReconciliationActive
+    status: "True"
+    type: ReconciliationActive
+  - lastTransitionTime: "2023-03-02T12:58:07Z"
+    message: All is well
+    observedGeneration: 1
+    reason: AsExpected
+    status: "True"
+    type: AllMachinesReady
+  - lastTransitionTime: "2023-03-02T13:08:09Z"
+    message: All is well
+    observedGeneration: 1
+    reason: AsExpected
+    status: "True"
+    type: AllNodesHealthy
+  - lastTransitionTime: "2023-03-02T12:57:45Z"
+    observedGeneration: 1
+    reason: AsExpected
+    status: "False"
+    type: AutorepairEnabled
+  - lastTransitionTime: "2023-03-02T13:08:08Z"
+    observedGeneration: 1
+    reason: AsExpected
+    status: "True"
+    type: Ready
+  replicas: 2
+  version: 4.13.0-ec.2

@@ -1,0 +1,227 @@
+Introduction to Hostedclusters
+a.k.a Hypershift
+03 Mar 2023
+Tags: Openshift, K8s, Hypershift, RHACM
+
+Juan Manuel Parrilla
+Principal Software Engineer, Red Hat
+jparrill@redhat.com
+https://github.com/jparrill/presentations/IntroductionToHostedClusters
+@kerbeross
+
+
+* Introduction to HostedCluster 
+
+.image img/high-level-overview.png _ 950
+.background img/background.png
+
+* About me
+
+.background img/background.png
+
+- @Redhat from 2014
+- Currently working at Hypershift backend
+- Always learner...
+
+.image img/jparrill_avatar.jpg _ 250
+
+.caption [[https://github.com/jparrill/HandsOnProw][Hands on Prow]] by Juan Manuel Parrilla
+
+* Agenda
+
+- What is Hypershift?
+- Why Hypershift? 
+- Concepts
+- Providers
+- Hostedclusters Management 
+    - Upgrades
+    - MachineConfigs
+    - Tuned
+- Separation ControlPlane/DataPlane
+- Networking Internals
+- Main Objects and APIs
+- Demos 
+- References
+
+.background img/background.png
+.caption [[https://github.com/jparrill/HandsOnProw][Hands on Prow]] by Juan Manuel Parrilla
+
+* What is Hypershift? 
+
+- Middleware to host multiple Openshift Clusters into another Openshift Management cluster
+- Installed as an operator, but not a regular one with OLM.
+- We have a CLI!
+- Cross cloud compatibility
+
+* What is Hypershift? 
+
+HostedClusters are fully compliant as regular Openshift, with some small differences:
+
+- No masters from HostedCluster user PoV
+- No self awareness (A HC does not know that is a HostedCluster)
+- A final user only will see workloads, no ControlPlane things
+- A HostedCluster Control Plane runs in a separated Namespace in the Management Cluster
+
+.background img/background.png
+
+
+* Why Hypershift? 
+
+- Less time to provision.
+- Less cost for the customer.
+- More security, decoupled Control plane and Data plane.
+- Also no direct communication from HostedCluster to Management cluster.
+- Enable segregation of ownership and responsibility for different personas.
+
+.background img/background.png
+
+
+* Concepts 
+
+- Management Cluster: Openshift cluster which holds HostedClusters
+- Hosted Cluster: Openshift cluster for the final customer (Stored in a separated NS)
+- Hosted Control Plane: Openshift Control Plane for the HostedCluster (Stored in a separated NS)
+- Hosted Control Plane Infrastructure: Infra created in the external provider
+- Management Cluster Infra: Infra dedicated for the Management cluster in the external provider
+- HostedCluster Infra: Infra dedicated for the HostedCluster in the external provider
+
+.background img/background.png
+
+* Providers
+
+Focus on:
+
+- AWS
+- Bare Metal
+
+For Later: 
+
+- Azure
+- Assisted Installer
+- Kubevirt
+- PowerVS
+- None
+
+.background img/background.png
+
+
+* HostedCluster Management 
+
+We have 3 topics here:
+
+- Upgrades - Control Plane and Data Plane
+- MachineConfigs
+- Tuned Config
+
+
+In general this kind of managment topics are ruled by the SRE or Openshift Management Cluster people
+
+.image img/machine-management.png _ 730
+.background img/background.png
+
+
+* HostedCluster Management: Upgrades 
+
+Support policy of 2 versions back.
+
+*Control* *Plane:* To perform the upgrade it's matter of edit the HostedCluster CR
+.code samples/hostedcluster.yaml /^  release/,/^    image/
+
+*Data* *Plane*: To perform the upgrade it's matter of edit the NodePool/s CR
+.code samples/nodepool.yaml /^  release/,/^  replicas/
+
+- *InPlace*: Mostly for Bare Metal servers and involves a server restart and apply of the new ignition config.
+- *Replace*: Mostly for Cloud providers. Involves a creation of new instance to replace the older one.
+
+.background img/background.png
+
+* HostedCluster Management: MachineConfigs 
+
+In order to apply a MachineConfig we will differ a bit from the tipical OCP approach because we don't have any MachineConfig Operator. More info [[https://hypershift-docs.netlify.app/how-to/automated-machine-management/nodepool-upgrades/][*here*]]:
+
+- Create a ConfigMap in the same NS as the HostedCluster CRs are located
+.code samples/machineconfig.yaml /^  config/,/^        ignition/
+
+- Edit the NodePool:
+.code samples/nodepool.yaml /^spec/,/^    - name/
+.background img/background.png
+
+* HostedCluster Management: Tuned 
+
+In order to apply a Tuned configuration we follows the same procedure as MachineConfig. More info [[https://hypershift-docs.netlify.app/how-to/automated-machine-management/node-tuning/][*here*]]:
+
+- Create a ConfigMap in the same NS as the HostedCluster CRs are located
+.code samples/tuned.yaml /^data/,/^      - data/
+
+- Edit the NodePool:
+.code samples/nodepool.yaml /^  tuningConfig/,/^    - name/
+.background img/background.png
+
+
+* Separation ControlPlane/DataPlane 
+
+Features:
+
+- For security, multiple customers could use the same Management Cluster without know about the other ones.
+- We can perform an upgrade of the ControlPlane without affect the NodePool versions, then the customer workloads will not be affected
+- The customer cannot communicate with the Management Cluster, only the HostedCluster one.
+- The HostedCluster nodes will only run customer workloads and some pods to allow the communication with the KAS.
+- The customer will not be allowed to modify the Hypershift CRs (HostedCluster or NodePools)
+
+.background img/background.png
+
+
+* Networking Internals 
+
+.image img/net-simple.png _ 950
+.background img/background.png
+
+* Networking Internals 
+
+Hosted ControlPlane and Data plane will use Konnectivity to establish a tunnel for communications from KAS to Computes and works as follows:
+
+- The Konnectivity agent in the compute nodes, connects with the server in the Hosted ControlPlane establishing a tunnel
+- The KAS will use that tunnel to communicate with the compute nodes
+- The compute nodes will use an “Exposed Service” (AWS: KAS Load Balancer) to reach the Hosted Cluster API
+- The Hosted Controlplane will consume the OLM, Oauth, Openshift API using Konnectivity server-agent which could reach the services located in the Management cluster
+
+The diagram shows an agnostic approach, but for example, if you deploys a HostedCluster in AWS, the “Exposed Services” are AWS Load balancers. That means that in every platform we deploy we will maintain the same core pieces.
+
+.background img/background.png
+
+
+* Main Objects and APIs
+- [[https://gist.github.com/jparrill/db4235cd4745a2ac58d19b9d63679a30#file-nodepool-inplace-yaml][NodePool - Inplace]]
+- [[https://gist.github.com/jparrill/db4235cd4745a2ac58d19b9d63679a30#file-nodepool-yaml][NodePool - Replace]]
+- [[https://gist.github.com/jparrill/db4235cd4745a2ac58d19b9d63679a30#file-hostedcluster-yaml][HostedCluster]]
+- [[https://gist.github.com/jparrill/db4235cd4745a2ac58d19b9d63679a30#file-machineconfig-configmap-yaml][MachineConfig Patches]]
+- [[https://gist.github.com/jparrill/db4235cd4745a2ac58d19b9d63679a30#file-tuned-configmap-yaml][Node Tuning]]
+- [[https://hypershift-docs.netlify.app/how-to/automated-machine-management/node-tuning/][Official Doc]]
+.background img/background.png
+
+
+* Demos
+
+- [[https://drive.google.com/file/d/1UTUHxAV3qKmcD-KkIH_zPi0kfaNT5YGz/view?resourcekey][*AWS*]]
+- [[https://drive.google.com/file/d/1zuTut9CcvBzU_OHjMhxEv2wKVoRSvTE5/view?resourcekey][*Assisted* *Installer*]]
+- [[https://drive.google.com/file/d/1CsciXeD30gTExfJXr5psero4KaxevBup/view?resourcekey][*Kubevirt*]]
+- Live Demo by Lucas!
+
+.image img/demo-time.jpeg _ 550
+.background img/background.png
+
+
+* References 
+
+- [[https://hypershift-docs.netlify.app/][*Official* *Doc*]]
+- [[https://gist.github.com/jparrill/db4235cd4745a2ac58d19b9d63679a30][CRs and Snippets]]
+- [[https://issues.redhat.com/projects/HOSTEDCP][Jira]]
+- [[https://hypershift-docs.netlify.app/getting-started/][Getting Started]]
+.background img/background.png
+
+* Questions? 
+.background img/background.png
+
+* Thanks!
+.image img/the_end.jpg _ 650
+.background img/background.png

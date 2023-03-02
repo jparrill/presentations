@@ -1,0 +1,245 @@
+apiVersion: hypershift.openshift.io/v1beta1
+kind: HostedCluster
+metadata:
+  annotations:
+    hypershift.openshift.io/cleanup-cloud-resources: "true"
+  creationTimestamp: "2023-03-02T12:55:55Z"
+  finalizers:
+  - hypershift.openshift.io/finalizer
+  - hypershift.io/aws-oidc-discovery
+  generation: 3
+  labels:
+    hypershift.openshift.io/auto-created-for-infra: example-wvjw6
+  name: example-wvjw6
+  namespace: e2e-clusters-ssphq
+  resourceVersion: "125685"
+  uid: bb160fc1-5769-4549-aa66-9bcf8a78ce8f
+spec:
+  autoscaling: {}
+  clusterID: a63d4a7c-f3e6-4ffc-9424-5bce5c9926e6
+  controllerAvailabilityPolicy: SingleReplica
+  dns:
+    baseDomain: jpdv.aws.kerbeross.com
+    privateZoneID: Z02770891V12YCGN5G57S
+    publicZoneID: Z0738860150HLCUE93T0O
+  etcd:
+    managed:
+      storage:
+        persistentVolume:
+          size: 4Gi
+          storageClassName: gp3-csi
+        type: PersistentVolume
+    managementType: Managed
+  fips: false
+  infraID: example-wvjw6
+  infrastructureAvailabilityPolicy: SingleReplica
+  issuerURL: https://jparrill-hosted-us-west-1.s3.us-west-1.amazonaws.com/example-wvjw6
+  networking:
+    clusterNetwork:
+    - cidr: 10.132.0.0/14
+    machineNetwork:
+    - cidr: 10.0.0.0/16
+    networkType: OVNKubernetes
+    serviceNetwork:
+    - cidr: 172.31.0.0/16
+  olmCatalogPlacement: management
+  platform:
+    aws:
+      cloudProviderConfig:
+        subnet:
+          id: subnet-0c5eefcd1bf583159
+        vpc: vpc-0ec2794505d5bdcd3
+        zone: us-west-1b
+      endpointAccess: PublicAndPrivate
+      region: us-west-1
+      resourceTags:
+      - key: expirationDate
+        value: 2023-03-02T13:55+24:00
+      - key: kubernetes.io/cluster/example-wvjw6
+        value: owned
+      rolesRef:
+        controlPlaneOperatorARN: arn:aws:iam::820196288204:role/example-wvjw6-control-plane-operator
+        imageRegistryARN: arn:aws:iam::820196288204:role/example-wvjw6-openshift-image-registry
+        ingressARN: arn:aws:iam::820196288204:role/example-wvjw6-openshift-ingress
+        kubeCloudControllerARN: arn:aws:iam::820196288204:role/example-wvjw6-cloud-controller
+        networkARN: arn:aws:iam::820196288204:role/example-wvjw6-cloud-network-config-controller
+        nodePoolManagementARN: arn:aws:iam::820196288204:role/example-wvjw6-node-pool
+        storageARN: arn:aws:iam::820196288204:role/example-wvjw6-aws-ebs-csi-driver-controller
+    type: AWS
+  pullSecret:
+    name: example-wvjw6-pull-secret
+  release:
+    image: quay.io/openshift-release-dev/ocp-release:4.13.0-ec.2-x86_64
+  secretEncryption:
+    aescbc:
+      activeKey:
+        name: example-wvjw6-etcd-encryption-key
+    type: aescbc
+  services:
+  - service: APIServer
+    servicePublishingStrategy:
+      type: LoadBalancer
+  - service: OAuthServer
+    servicePublishingStrategy:
+      type: Route
+  - service: Konnectivity
+    servicePublishingStrategy:
+      type: Route
+  - service: Ignition
+    servicePublishingStrategy:
+      type: Route
+  - service: OVNSbDb
+    servicePublishingStrategy:
+      type: Route
+  sshKey:
+    name: example-wvjw6-ssh-key
+status:
+  conditions:
+  - lastTransitionTime: "2023-03-02T12:57:33Z"
+    message: All is well
+    observedGeneration: 3
+    reason: AsExpected
+    status: "True"
+    type: ValidAWSIdentityProvider
+  - lastTransitionTime: "2023-03-02T13:15:40Z"
+    message: ""
+    observedGeneration: 3
+    reason: FromClusterVersion
+    status: "True"
+    type: ClusterVersionSucceeding
+  - lastTransitionTime: "2023-03-02T13:15:40Z"
+    message: Cluster version is 4.13.0-ec.2
+    observedGeneration: 3
+    reason: FromClusterVersion
+    status: "False"
+    type: ClusterVersionProgressing
+  - lastTransitionTime: "2023-03-02T12:58:17Z"
+    message: Payload loaded version="4.13.0-ec.2" image="quay.io/openshift-release-dev/ocp-release:4.13.0-ec.2-x86_64"
+      architecture="amd64"
+    observedGeneration: 3
+    reason: PayloadLoaded
+    status: "True"
+    type: ClusterVersionReleaseAccepted
+  - lastTransitionTime: "2023-03-02T12:55:55Z"
+    message: Condition not found in the CVO.
+    observedGeneration: 3
+    reason: StatusUnknown
+    status: Unknown
+    type: ClusterVersionUpgradeable
+  - lastTransitionTime: "2023-03-02T13:15:40Z"
+    message: Done applying 4.13.0-ec.2
+    observedGeneration: 3
+    reason: FromClusterVersion
+    status: "True"
+    type: ClusterVersionAvailable
+  - lastTransitionTime: "2023-03-02T13:44:54Z"
+    message: The hosted cluster is not degraded
+    observedGeneration: 3
+    reason: AsExpected
+    status: "False"
+    type: Degraded
+  - lastTransitionTime: "2023-03-02T12:56:50Z"
+    message: ""
+    observedGeneration: 3
+    reason: QuorumAvailable
+    status: "True"
+    type: EtcdAvailable
+  - lastTransitionTime: "2023-03-02T12:59:00Z"
+    message: Kube APIServer deployment is available
+    observedGeneration: 3
+    reason: AsExpected
+    status: "True"
+    type: KubeAPIServerAvailable
+  - lastTransitionTime: "2023-03-02T12:56:29Z"
+    message: All is well
+    observedGeneration: 3
+    reason: AsExpected
+    status: "True"
+    type: InfrastructureReady
+  - lastTransitionTime: "2023-03-02T12:55:55Z"
+    message: The hosted control plane is not found
+    observedGeneration: 3
+    reason: StatusUnknown
+    status: Unknown
+    type: ExternalDNSReachable
+  - lastTransitionTime: "2023-03-02T12:59:00Z"
+    message: The hosted control plane is available
+    observedGeneration: 3
+    reason: AsExpected
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2023-03-02T12:55:55Z"
+    message: Configuration passes validation
+    observedGeneration: 3
+    reason: AsExpected
+    status: "True"
+    type: ValidConfiguration
+  - lastTransitionTime: "2023-03-02T12:55:55Z"
+    message: HostedCluster is supported by operator configuration
+    observedGeneration: 3
+    reason: AsExpected
+    status: "True"
+    type: SupportedHostedCluster
+  - lastTransitionTime: "2023-03-02T12:56:05Z"
+    message: Configuration passes validation
+    reason: AsExpected
+    status: "True"
+    type: ValidHostedControlPlaneConfiguration
+  - lastTransitionTime: "2023-03-02T12:57:31Z"
+    message: Ignition server deployment is available
+    observedGeneration: 3
+    reason: AsExpected
+    status: "True"
+    type: IgnitionEndpointAvailable
+  - lastTransitionTime: "2023-03-02T12:55:55Z"
+    message: Reconciliation active on resource
+    observedGeneration: 3
+    reason: AsExpected
+    status: "True"
+    type: ReconciliationActive
+  - lastTransitionTime: "2023-03-02T12:55:56Z"
+    message: Release image is valid
+    observedGeneration: 3
+    reason: AsExpected
+    status: "True"
+    type: ValidReleaseImage
+  - lastTransitionTime: "2023-03-02T12:55:56Z"
+    message: HostedCluster is at expected version
+    observedGeneration: 3
+    reason: AsExpected
+    status: "False"
+    type: Progressing
+  - lastTransitionTime: "2023-03-02T12:56:00Z"
+    message: OIDC configuration is valid
+    observedGeneration: 3
+    reason: AsExpected
+    status: "True"
+    type: ValidOIDCConfiguration
+  - lastTransitionTime: "2023-03-02T12:56:00Z"
+    message: Reconciliation completed succesfully
+    observedGeneration: 3
+    reason: ReconciliatonSucceeded
+    status: "True"
+    type: ReconciliationSucceeded
+  controlPlaneEndpoint:
+    host: a59e1542381324937bb043b95df42bdf-0e280af40dccebed.elb.us-west-1.amazonaws.com
+    port: 6443
+  ignitionEndpoint: ignition-server.apps.example-wvjw6.hypershift.local
+  kubeadminPassword:
+    name: example-wvjw6-kubeadmin-password
+  kubeconfig:
+    name: example-wvjw6-admin-kubeconfig
+  oauthCallbackURLTemplate: https://oauth-e2e-clusters-ssphq-example-wvjw6.apps.jparrill-dev.jpdv.aws.kerbeross.com:443/oauthcallback/[identity-provider-name]
+  version:
+    availableUpdates: null
+    desired:
+      image: quay.io/openshift-release-dev/ocp-release:4.13.0-ec.2-x86_64
+      version: ""
+    history:
+    - completionTime: "2023-03-02T13:15:40Z"
+      image: quay.io/openshift-release-dev/ocp-release:4.13.0-ec.2-x86_64
+      startedTime: "2023-03-02T12:55:55Z"
+      state: Completed
+      verified: false
+      version: 4.13.0-ec.2
+    observedGeneration: 1
