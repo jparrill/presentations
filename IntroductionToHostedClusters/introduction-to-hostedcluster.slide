@@ -34,9 +34,6 @@ https://github.com/jparrill/presentations/IntroductionToHostedClusters
 - Concepts
 - Providers
 - Hostedclusters Management 
-    - Upgrades
-    - MachineConfigs
-    - Tuned
 - Separation ControlPlane/DataPlane
 - Networking Internals
 - Main Objects and APIs
@@ -116,7 +113,7 @@ We have 3 topics here:
 
 In general this kind of managment topics are ruled by the SRE or Openshift Management Cluster people
 
-.image img/machine-management.png _ 730
+.image img/machine-management.png _ 530
 .background img/background.png
 
 
