@@ -50,6 +50,10 @@ https://github.com/jparrill/presentations/IntroductionToHostedClusters
 - We have a CLI!
 - Cross cloud compatibility
 
+.image img/whatis.webp _ 450
+
+.background img/background.png
+
 * What is Hypershift? 
 
 HostedClusters are fully compliant as regular Openshift, with some small differences:
@@ -58,6 +62,7 @@ HostedClusters are fully compliant as regular Openshift, with some small differe
 - No self awareness (A HC does not know that is a HostedCluster)
 - A final user only will see workloads, no ControlPlane things
 - A HostedCluster Control Plane runs in a separated Namespace in the Management Cluster
+.image img/whatis.webp _ 350
 
 .background img/background.png
 
@@ -70,6 +75,7 @@ HostedClusters are fully compliant as regular Openshift, with some small differe
 - Also no direct communication from HostedCluster to Management cluster.
 - Enable segregation of ownership and responsibility for different personas.
 
+.image img/why.jpeg _ 550
 .background img/background.png
 
 
