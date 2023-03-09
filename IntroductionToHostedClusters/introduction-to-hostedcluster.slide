@@ -33,7 +33,7 @@ https://github.com/jparrill/presentations/IntroductionToHostedClusters
 - Why Hypershift? 
 - Concepts
 - Providers
-- Hostedclusters Management 
+- HostedClusters Management 
 - Separation ControlPlane/DataPlane
 - Networking Internals
 - Main Objects and APIs
