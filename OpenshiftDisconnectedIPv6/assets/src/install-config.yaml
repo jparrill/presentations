@@ -1,0 +1,81 @@
+apiVersion: v1
+baseDomain: e2e.bos.redhat.com
+networking:
+  networkType: OVNKubernetes
+  machineCIDR: 2100:52:1302::/64 
+  clusterNetwork:
+  - cidr: fd01::/48
+    hostPrefix: 64
+  serviceNetwork:
+  - fd02::/112
+metadata:
+  name: mgmt-hub
+compute:
+- name: worker
+  replicas: 0
+controlPlane:
+  name: master
+  replicas: 3
+  platform:
+    baremetal: {}
+platform:
+  baremetal:
+    provisioningNetworkInterface: enp3s0f1
+    provisioningNetworkCIDR: 2100:52:1307::/64
+    provisioningBridge: "prov.157"
+    externalBridge: "baremetal.152"
+    bootstrapProvisioningIP: 2100:52:1307::2
+    bootstrapOSImage: http://[2100:52:1302::1]/4.8.0-x86_64/rhcos-48.84.202106091622-0-qemu.x86_64.qcow2.gz?sha256=17868a1963ae2eae25fb16cb85871e08758066f5c5ee87276201c377cf25e418
+    clusterOSImage: http://[2100:52:1302::1]/4.8.0-x86_64/rhcos-48.84.202106091622-0-openstack.x86_64.qcow2.gz?sha256=6ab5c6413f275277ea90f7dfc66424ef14993941ba3a9f3a43955ab268e7d76d
+    apiVIP: 2100:52:1302::3
+    ingressVIP: 2100:52:1302::2 
+    hosts:
+      - name: openshift-master-0
+        role: master
+        bmc:
+          address:  ipmi://[2100:52:1300::81]
+          username: teseo
+          password: minos
+        bootMACAddress: 18:DB:B1:C8:59:A3
+        hardwareProfile: default
+      - name: openshift-master-1
+        role: master
+        bmc:
+          address:  ipmi://[2100:52:1300::82]
+          username: teseo
+          password: minos
+        bootMACAddress: 18:DB:B1:AA:BB:A9
+        hardwareProfile: default
+      - name: openshift-master-2
+        role: master
+        bmc:
+          address:  ipmi://[2100:52:1300::83]
+          username: teseo
+          password: minos
+        bootMACAddress: 18:DB:BB:AA:D5:AD
+        hardwareProfile: default
+        #        bootMode: UEFI
+imageContentSources:
+- mirrors:
+  - bm-cluster-1-hyper.e2e.bos.redhat.com:5000/ocp4
+  source: quay.io/openshift-release-dev/ocp-release
+- mirrors:
+  - bm-cluster-1-hyper.e2e.bos.redhat.com:5000/ocp4
+  source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
+additionalTrustBundle: |
+  -----BEGIN CERTIFICATE-----
+  MIIGJzCCBA+gAwIBAgIUcuRdl0sEsCZMPWuE44snY/MLgcowDQYJKoZIhvcNAQEL
+  BQAwgYgxCzAJBgNVBAYTAlVTMRYwFAYDVQQIDA1NYXNzYWNodXNldHRzMREwDwYD
+  aHlwZXIuZTJlLmJvcy5yZWRoYXQuY29tMIICIjANBgkqhkiG9w0BAQEFAAOCAg8A
+  MIICCgKCAgEA4hNqMmnZ+OLqNOittlCo+9xP2jKn5z4X4GzsDhlAfDXEsDUEX6+F
+  ...
+  ...
+  ...
+  2dj3p8cKkPxDmg6WRkEOTjVL7Gmi/VAItsq8HMBYTGmEOvjDw45CdvMgNzQF8Ul7
+  GGfmDnicADMISxGIDnfhPUf+GllZtEn8D+c6WyfnDQMfqy9A56stxHWmwdlTf+UM
+  6Rf1YNZC6XaR2GzJTz8mdiyG4L/cG6um65TigWOjaAOfD5ecei+d0maqmw==
+  -----END CERTIFICATE-----
+pullSecret: |
+  {"auths":{"bm-cluster-1-hyper.e2e.bos.redhat.com:5000":{"auth":"a25pOmtuaQ==","email":"john.doe@redhat.com"}}}
+sshKey: |
+  ssh-rsa AAAAB3NzaC1yc2EAAACFGjqegPtQVtK1rH38ODIXRwCQlmCbClFQCMIR6nUn6wWCv5kcC9An7c9jg5Zjwu9g/umM0hQs1HX4nFGhg6AXyuD6jjbmrugKEO1NTjG9pKB+G6OSbbwrbydyd1ZonbrhTvN1rFSrKA+nKX2bseZDZh4ikBU4CPMpEG/F1AqBMlIyk= kni@bm-cluster-1-hyper.e2e.bos.redhat.com

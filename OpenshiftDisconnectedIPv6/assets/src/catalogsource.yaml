@@ -1,0 +1,14 @@
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: custom-community-operator-catalog-v4-8
+  namespace: openshift-marketplace
+spec:
+  sourceType: grpc
+  image: bastion.redhat.lab.com:5000/olm-index/community-operator-index:v4.8
+  displayName: BM Lab - Community Operator - v4.8
+  publisher: BM Lab Registry
+  updateStrategy:
+    registryPoll:
+      interval: 30m

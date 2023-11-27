@@ -13,3 +13,5 @@ go install golang.org/x/tools/cmd/present
 cd IntroductionToHostedClusters
 present
 ```
+
+or consume the pre-rendered version in the `render` folder

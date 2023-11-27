@@ -1,0 +1,9 @@
+apiVersion: operator.openshift.io/v1alpha1
+kind: ImageContentSourcePolicy
+metadata:
+  name: ztp-disconnected
+spec:
+  repositoryDigestMirrors:
+  - mirrors:
+    - bm-cluster-1-hyper.e2e.bos.redhat.com:5000/rhacm2
+    source: quay.io/acm-d

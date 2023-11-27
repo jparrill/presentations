@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<!-- saved from url=(0059)http://127.0.0.1:3999/introduction-to-hostedcluster.slide#1 -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Introduction to HostedClusters</title>
+    
+    <script>
+      var notesEnabled =  false ;
+    </script>
+    <script src="./Introduction_to_HostedClusters_files/slides.js"></script>
+
+    
+
+    <script>
+      
+      if (window["location"] && window["location"]["hostname"] == "talks.golang.org") {
+        var _gaq = _gaq || [];
+        _gaq.push(["_setAccount", "UA-11222381-6"]);
+        _gaq.push(["b._setAccount", "UA-49880327-6"]);
+        window.trackPageview = function() {
+          _gaq.push(["_trackPageview", location.pathname+location.hash]);
+          _gaq.push(["b._trackPageview", location.pathname+location.hash]);
+        };
+        window.trackPageview();
+        window.trackEvent = function(category, action, opt_label, opt_value, opt_noninteraction) {
+          _gaq.push(["_trackEvent", category, action, opt_label, opt_value, opt_noninteraction]);
+          _gaq.push(["b._trackEvent", category, action, opt_label, opt_value, opt_noninteraction]);
+        };
+      }
+    </script>
+  <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1"><meta name="apple-mobile-web-app-capable" content="yes"><link id="nordvpn-contentScript-extension-fonts" rel="stylesheet" href="./Introduction_to_HostedClusters_files/css"></head>
+
+  <body style="display: none" class="loaded">
+
+    <section class="slides layout-widescreen">
+
+      <article class="current">
+        <h1>Introduction to HostedClusters</h1>
+        <h3>a.k.a Hypershift</h3>
+        <h3>3 March 2023</h3>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    Juan Manuel Parrilla
+  </p>
+  
+
+  
+  <p>
+    Principal Software Engineer, Red Hat
+  </p>
+  
+
+          </div>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    
+  </p>
+  
+
+          </div>
+        
+      </article>
+
+  
+  
+      <article class="background next" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Introduction to HostedCluster</h3>
+        
+<div class="image">
+  <img src="./Introduction_to_HostedClusters_files/high-level-overview.png" width="950">
+</div>
+
+      
+      <span class="pagenumber">2</span>
+      </article>
+  
+  
+  
+      <article class="background far-next" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>About me</h3>
+        
+  <ul>
+  
+    <li>@Redhat from 2014</li>
+  
+    <li>Currently working at Hypershift backend</li>
+  
+    <li>Always learner...</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Introduction_to_HostedClusters_files/jparrill_avatar.jpg" width="250">
+</div>
+<figcaption><a href="https://github.com/jparrill/presentations/IntroductionToHostedClusters" target="_blank">Introduction to HostedClusters</a> by Juan Manuel Parrilla</figcaption>
+      
+      <span class="pagenumber">3</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Agenda</h3>
+        
+  <ul>
+  
+    <li>What is Hypershift?</li>
+  
+    <li>Why Hypershift? </li>
+  
+    <li>Concepts</li>
+  
+    <li>Providers</li>
+  
+    <li>HostedClusters Management </li>
+  
+    <li>Separation ControlPlane/DataPlane</li>
+  
+    <li>Networking Internals</li>
+  
+    <li>Main Objects and APIs</li>
+  
+    <li>Demos </li>
+  
+    <li>References</li>
+  
+  </ul>
+<figcaption><a href="https://github.com/jparrill/presentations/IntroductionToHostedClusters" target="_blank">Introduction to HostedClusters</a> by Juan Manuel Parrilla</figcaption>
+      
+      <span class="pagenumber">4</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>What is Hypershift?</h3>
+        
+  <ul>
+  
+    <li>Middleware to host multiple Openshift Clusters into another Openshift Management cluster</li>
+  
+    <li>Installed as an operator, but not a regular one with OLM.</li>
+  
+    <li>We have a CLI!</li>
+  
+    <li>Cross cloud compatibility</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Introduction_to_HostedClusters_files/whatis.webp" width="450">
+</div>
+
+      
+      <span class="pagenumber">5</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>What is Hypershift?</h3>
+        
+  
+  <p>
+    HostedClusters are fully compliant as regular Openshift, with some small differences:
+  </p>
+  
+
+  <ul>
+  
+    <li>No masters from HostedCluster user PoV</li>
+  
+    <li>No self awareness (A HC does not know that is a HostedCluster)</li>
+  
+    <li>A final user only will see workloads, no ControlPlane things</li>
+  
+    <li>A HostedCluster Control Plane runs in a separated Namespace in the Management Cluster</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Introduction_to_HostedClusters_files/whatis.webp" width="350">
+</div>
+
+      
+      <span class="pagenumber">6</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Why Hypershift?</h3>
+        
+  <ul>
+  
+    <li>Less time to provision.</li>
+  
+    <li>Less cost for the customer.</li>
+  
+    <li>More security, decoupled Control plane and Data plane.</li>
+  
+    <li>Also no direct communication from HostedCluster to Management cluster.</li>
+  
+    <li>Enable segregation of ownership and responsibility for different personas.</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Introduction_to_HostedClusters_files/why.jpeg" width="550">
+</div>
+
+      
+      <span class="pagenumber">7</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Concepts</h3>
+        
+  <ul>
+  
+    <li>Management Cluster: Openshift cluster which holds HostedClusters</li>
+  
+    <li>Hosted Cluster: Openshift cluster for the final customer (Stored in a separated NS)</li>
+  
+    <li>Hosted Control Plane: Openshift Control Plane for the HostedCluster (Stored in a separated NS)</li>
+  
+    <li>Hosted Control Plane Infrastructure: Infra created in the external provider</li>
+  
+    <li>Management Cluster Infra: Infra dedicated for the Management cluster in the external provider</li>
+  
+    <li>HostedCluster Infra: Infra dedicated for the HostedCluster in the external provider</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">8</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Providers</h3>
+        
+  
+  <p>
+    Focus on:
+  </p>
+  
+
+  <ul>
+  
+    <li>AWS</li>
+  
+    <li>Bare Metal</li>
+  
+  </ul>
+
+  
+  <p>
+    For Later: 
+  </p>
+  
+
+  <ul>
+  
+    <li>Azure</li>
+  
+    <li>Assisted Installer</li>
+  
+    <li>Kubevirt</li>
+  
+    <li>PowerVS</li>
+  
+    <li>None</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">9</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>HostedCluster Management</h3>
+        
+  
+  <p>
+    We have 3 topics here:
+  </p>
+  
+
+  <ul>
+  
+    <li>Upgrades - Control Plane and Data Plane</li>
+  
+    <li>MachineConfigs</li>
+  
+    <li>Tuned Config</li>
+  
+  </ul>
+
+  
+  <p>
+    In general this kind of managment topics are ruled by the SRE or Openshift Management Cluster people
+  </p>
+  
+
+<div class="image">
+  <img src="./Introduction_to_HostedClusters_files/machine-management.png" width="530">
+</div>
+
+      
+      <span class="pagenumber">10</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>HostedCluster Management: Upgrades</h3>
+        
+  
+  <p>
+    Support policy of 2 versions back.
+  </p>
+  
+
+  
+  <p>
+    <b>Control</b> <b>Plane:</b> To perform the upgrade it's matter of edit the HostedCluster CR
+  </p>
+  
+
+  <div class="code">
+<pre><span num="71">  release:</span>
+<span num="72">    image: quay.io/openshift-release-dev/ocp-release:4.13.0-ec.2-x86_64</span>
+</pre>
+</div>
+
+  
+  <p>
+    <b>Data</b> <b>Plane</b>: To perform the upgrade it's matter of edit the NodePool/s CR
+  </p>
+  
+
+  <div class="code">
+<pre><span num="49">  release:</span>
+<span num="50">    image: quay.io/openshift-release-dev/ocp-release:4.13.0-ec.2-x86_64</span>
+<span num="51">  replicas: 2</span>
+</pre>
+</div>
+
+  <ul>
+  
+    <li><b>InPlace</b>: Mostly for Bare Metal servers and involves a server restart and apply of the new ignition config.</li>
+  
+    <li><b>Replace</b>: Mostly for Cloud providers. Involves a creation of new instance to replace the older one.</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">11</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>HostedCluster Management: MachineConfigs</h3>
+        
+  
+  <p>
+    In order to apply a MachineConfig we will differ a bit from the tipical OCP approach because we don't have any MachineConfig Operator. More info <a href="https://hypershift-docs.netlify.app/how-to/automated-machine-management/nodepool-upgrades/" target="_blank"><b>here</b></a>:
+  </p>
+  
+
+  <ul>
+  
+    <li>Create a ConfigMap in the same NS as the HostedCluster CRs are located</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="7">  config: |</span>
+<span num="8">    apiVersion: machineconfiguration.openshift.io/v1</span>
+<span num="9">    kind: MachineConfig</span>
+<span num="10">    metadata:</span>
+<span num="11">      labels:</span>
+<span num="12">        machineconfiguration.openshift.io/role: worker</span>
+<span num="13">      name: config-change-01</span>
+<span num="14">    spec:</span>
+<span num="15">      config:</span>
+<span num="16">        ignition:</span>
+</pre>
+</div>
+
+  <ul>
+  
+    <li>Edit the NodePool:</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="22">spec:</span>
+<span num="23">  config:</span>
+<span num="24">    - name: config-change-01</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">12</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>HostedCluster Management: Tuned</h3>
+        
+  
+  <p>
+    In order to apply a Tuned configuration we follows the same procedure as MachineConfig. More info <a href="https://hypershift-docs.netlify.app/how-to/automated-machine-management/node-tuning/" target="_blank"><b>here</b></a>:
+  </p>
+  
+
+  <ul>
+  
+    <li>Create a ConfigMap in the same NS as the HostedCluster CRs are located</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="6">data:</span>
+<span num="7">  tuning: |</span>
+<span num="8">    apiVersion: tuned.openshift.io/v1</span>
+<span num="9">    kind: Tuned</span>
+<span num="10">    metadata:</span>
+<span num="11">      name: tuned-1</span>
+<span num="12">      namespace: openshift-cluster-node-tuning-operator</span>
+<span num="13">    spec:</span>
+<span num="14">      profile:</span>
+<span num="15">      - data: |</span>
+</pre>
+</div>
+
+  <ul>
+  
+    <li>Edit the NodePool:</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="26">  tuningConfig:</span>
+<span num="27">    - name: tuned-1</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">13</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Separation ControlPlane/DataPlane</h3>
+        
+  
+  <p>
+    Features:
+  </p>
+  
+
+  <ul>
+  
+    <li>For security, multiple customers could use the same Management Cluster without know about the other ones.</li>
+  
+    <li>We can perform an upgrade of the ControlPlane without affect the NodePool versions, then the customer workloads will not be affected</li>
+  
+    <li>The customer cannot communicate with the Management Cluster, only the HostedCluster one.</li>
+  
+    <li>The HostedCluster nodes will only run customer workloads and some pods to allow the communication with the KAS.</li>
+  
+    <li>The customer will not be allowed to modify the Hypershift CRs (HostedCluster or NodePools)</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">14</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Networking Internals</h3>
+        
+<div class="image">
+  <img src="./Introduction_to_HostedClusters_files/net-simple.png" width="950">
+</div>
+
+      
+      <span class="pagenumber">15</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Networking Internals</h3>
+        
+  
+  <p>
+    Hosted ControlPlane and Data plane will use Konnectivity to establish a tunnel for communications from KAS to Computes and works as follows:
+  </p>
+  
+
+  <ul>
+  
+    <li>The Konnectivity agent in the compute nodes, connects with the server in the Hosted ControlPlane establishing a tunnel</li>
+  
+    <li>The KAS will use that tunnel to communicate with the compute nodes</li>
+  
+    <li>The compute nodes will use an “Exposed Service” (AWS: KAS Load Balancer) to reach the Hosted Cluster API</li>
+  
+    <li>The Hosted Controlplane will consume the OLM, Oauth, Openshift API using Konnectivity server-agent which could reach the services located in the Management cluster</li>
+  
+  </ul>
+
+  
+  <p>
+    The diagram shows an agnostic approach, but for example, if you deploys a HostedCluster in AWS, the “Exposed Services” are AWS Load balancers. That means that in every platform we deploy we will maintain the same core pieces.
+  </p>
+  
+
+      
+      <span class="pagenumber">16</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Main Objects and APIs</h3>
+        
+  <ul>
+  
+    <li><a href="https://gist.github.com/jparrill/db4235cd4745a2ac58d19b9d63679a30#file-nodepool-inplace-yaml" target="_blank">NodePool - Inplace</a></li>
+  
+    <li><a href="https://gist.github.com/jparrill/db4235cd4745a2ac58d19b9d63679a30#file-nodepool-yaml" target="_blank">NodePool - Replace</a></li>
+  
+    <li><a href="https://gist.github.com/jparrill/db4235cd4745a2ac58d19b9d63679a30#file-hostedcluster-yaml" target="_blank">HostedCluster</a></li>
+  
+    <li><a href="https://gist.github.com/jparrill/db4235cd4745a2ac58d19b9d63679a30#file-machineconfig-configmap-yaml" target="_blank">MachineConfig Patches</a></li>
+  
+    <li><a href="https://gist.github.com/jparrill/db4235cd4745a2ac58d19b9d63679a30#file-tuned-configmap-yaml" target="_blank">Node Tuning</a></li>
+  
+    <li><a href="https://hypershift-docs.netlify.app/how-to/automated-machine-management/node-tuning/" target="_blank">Official Doc</a></li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">17</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Demos</h3>
+        
+  <ul>
+  
+    <li><a href="https://drive.google.com/file/d/1UTUHxAV3qKmcD-KkIH_zPi0kfaNT5YGz/view?resourcekey" target="_blank"><b>AWS</b></a></li>
+  
+    <li><a href="https://drive.google.com/file/d/1zuTut9CcvBzU_OHjMhxEv2wKVoRSvTE5/view?resourcekey" target="_blank"><b>Assisted</b> <b>Installer</b></a></li>
+  
+    <li><a href="https://drive.google.com/file/d/1CsciXeD30gTExfJXr5psero4KaxevBup/view?resourcekey" target="_blank"><b>Kubevirt</b></a></li>
+  
+    <li>Live Demo by Lucas!</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Introduction_to_HostedClusters_files/demo-time.jpeg" width="550">
+</div>
+
+      
+      <span class="pagenumber">18</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>References</h3>
+        
+  <ul>
+  
+    <li><a href="https://hypershift-docs.netlify.app/" target="_blank"><b>Official</b> <b>Doc</b></a></li>
+  
+    <li><a href="https://gist.github.com/jparrill/db4235cd4745a2ac58d19b9d63679a30" target="_blank">CRs and Snippets</a></li>
+  
+    <li><a href="https://issues.redhat.com/projects/HOSTEDCP" target="_blank">Jira</a></li>
+  
+    <li><a href="https://hypershift-docs.netlify.app/getting-started/" target="_blank">Getting Started</a></li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">19</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h2>Questions?</h2>
+      
+      <span class="pagenumber">20</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Thanks!</h3>
+        
+<div class="image">
+  <img src="./Introduction_to_HostedClusters_files/the_end.jpg" width="650">
+</div>
+
+      
+      <span class="pagenumber">21</span>
+      </article>
+  
+  
+
+      <article>
+        <h3>Thank you</h3>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    Juan Manuel Parrilla
+  </p>
+  
+
+  
+  <p>
+    Principal Software Engineer, Red Hat
+  </p>
+  
+<p class="link"><a href="mailto:jparrill@redhat.com" target="_blank">jparrill@redhat.com</a></p><p class="link"><a href="https://github.com/jparrill/presentations/IntroductionToHostedClusters" target="_blank">https://github.com/jparrill/presentations/IntroductionToHostedClusters</a></p><p class="link"><a href="http://twitter.com/kerbeross" target="_blank">@kerbeross</a></p>
+          </div>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    
+  </p>
+  
+
+          </div>
+        
+      </article>
+
+    <div class="slide-area" id="prev-slide-area"></div><div class="slide-area" id="next-slide-area"></div></section>
+
+    <div id="help" style="display: none;">
+      Use the left and right arrow keys or click the left and right
+      edges of the page to navigate between slides.<br>
+      (Press 'H' or navigate to hide this message.)
+    </div>
+
+    
+    <script src="./Introduction_to_HostedClusters_files/play.js"></script>
+    
+
+    <script>
+      (function() {
+        
+        if (window["location"] && window["location"]["hostname"] == "talks.golang.org") {
+          var ga = document.createElement("script"); ga.type = "text/javascript"; ga.async = true;
+          ga.src = ("https:" == document.location.protocol ? "https://ssl" : "http://www") + ".google-analytics.com/ga.js";
+          var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ga, s);
+        }
+      })();
+    </script>
+  
+
+<link rel="stylesheet" type="text/css" href="./Introduction_to_HostedClusters_files/css(1)"><link rel="stylesheet" type="text/css" href="./Introduction_to_HostedClusters_files/styles.css"></body><nordvpn-contentscript-extension-mount-3.6.0><template shadowrootmode="open"><link rel="stylesheet" href="chrome-extension://fjoaledfpmneenckfbpdfhkmimnjocfa/csHttp.bundle.css"><div id="nordvpn-contentScript-extension-root-3.6.0" style="position: fixed; left: 0px; top: 0px; z-index: 2147483647;"></div></template></nordvpn-contentscript-extension-mount-3.6.0></html>

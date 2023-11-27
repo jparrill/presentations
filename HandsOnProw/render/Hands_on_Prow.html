@@ -1,0 +1,2264 @@
+<!DOCTYPE html>
+<!-- saved from url=(0043)http://127.0.0.1:3999/hands-on-prow.slide#1 -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Hands on: Prow</title>
+    
+    <script>
+      var notesEnabled =  false ;
+    </script>
+    <script src="./Hands_on_Prow_files/slides.js"></script>
+
+    
+
+    <script>
+      
+      if (window["location"] && window["location"]["hostname"] == "talks.golang.org") {
+        var _gaq = _gaq || [];
+        _gaq.push(["_setAccount", "UA-11222381-6"]);
+        _gaq.push(["b._setAccount", "UA-49880327-6"]);
+        window.trackPageview = function() {
+          _gaq.push(["_trackPageview", location.pathname+location.hash]);
+          _gaq.push(["b._trackPageview", location.pathname+location.hash]);
+        };
+        window.trackPageview();
+        window.trackEvent = function(category, action, opt_label, opt_value, opt_noninteraction) {
+          _gaq.push(["_trackEvent", category, action, opt_label, opt_value, opt_noninteraction]);
+          _gaq.push(["b._trackEvent", category, action, opt_label, opt_value, opt_noninteraction]);
+        };
+      }
+    </script>
+  <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1"><meta name="apple-mobile-web-app-capable" content="yes"><link id="nordvpn-contentScript-extension-fonts" rel="stylesheet" href="./Hands_on_Prow_files/css"></head>
+
+  <body style="display: none" class="loaded">
+
+    <section class="slides layout-widescreen">
+
+      <article class="current">
+        <h1>Hands on: Prow</h1>
+        <h3>Kubernetes Native CI/CD</h3>
+        <h3>25 January 2020</h3>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    Juan Manuel Parrilla
+  </p>
+  
+
+  
+  <p>
+    Senior Software Engineer, Red Hat
+  </p>
+  
+
+          </div>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    
+  </p>
+  
+
+          </div>
+        
+      </article>
+
+  
+  
+      <article class="background next" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Hands on: Prow</h3>
+        
+<div class="image">
+  <img src="./Hands_on_Prow_files/first.png" width="950">
+</div>
+
+      
+      <span class="pagenumber">2</span>
+      </article>
+  
+  
+  
+      <article class="background far-next" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>About me</h3>
+        
+  <ul>
+  
+    <li>Programming enthusiast</li>
+  
+    <li>Redhatter</li>
+  
+    <li>Openshift/Kubernetes Lover</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Hands_on_Prow_files/jparrill_avatar.jpg" width="300">
+</div>
+<figcaption><a href="https://github.com/jparrill/HandsOnProw" target="_blank">Hands on Prow</a> by Juan Manuel Parrilla</figcaption>
+      
+      <span class="pagenumber">3</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Agenda</h3>
+        
+  <ul>
+  
+    <li>What is Prow</li>
+  
+    <li>Prow Control Plane</li>
+  
+    <li>Deploy &amp; Configure your Prow platform</li>
+  
+    <li>Prow Plugins</li>
+  
+    <li>Auto-management of your GitHub repo</li>
+  
+    <li>Testing with Prow</li>
+  
+    <li>Notification management</li>
+  
+    <li>References</li>
+  
+  </ul>
+<figcaption><a href="https://github.com/jparrill/HandsOnProw" target="_blank">Hands on Prow</a> by Juan Manuel Parrilla</figcaption>
+      
+      <span class="pagenumber">4</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>What is Prow</h3>
+        
+<div class="image">
+  <img src="./Hands_on_Prow_files/prow_icon.jpg">
+</div>
+
+  <ul>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/tree/master/prow" target="_blank">CI/CD System</a> hosted by a Kubernetes/Openshift platform</li>
+  
+    <li>Management of Github repo via comments <code>/lgtm</code> or <code>/retest</code></li>
+  
+    <li>Made in <a href="https://godoc.org/k8s.io/test-infra/prow" target="_blank">Golang</a></li>
+  
+    <li>Jobs manifests writed in <b>YAML</b></li>
+  
+    <li>Similar behaviour than <i>Operators</i></li>
+  
+    <li>This is the <a href="https://raw.githubusercontent.com/kubernetes/test-infra/master/prow/docs/pr-interactions-sequence.svg?sanitize=true" target="_blank">workflow diagram</a></li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">5</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>What is Prow</h3>
+        
+  <ul>
+  
+    <li>Stores the configuration on ConfigMaps and Secrets </li>
+  
+    <li>By default uses the <code>test-pod</code> namespace to trigger the pod jobs and the <code>default</code> namespace for Prow Control Plane</li>
+  
+    <li>An this is how looks like:</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="1">NAME                                READY   STATUS    RESTARTS   AGE</span>
+<span num="2">deck-f958755bc-skq64                1/1     Running   0          2d2h</span>
+<span num="3">deck-f958755bc-v5568                1/1     Running   0          2d2h</span>
+<span num="4">hook-57d5467cbc-6ndvg               1/1     Running   0          10d</span>
+<span num="5">hook-57d5467cbc-k22fm               1/1     Running   0          10d</span>
+<span num="6">horologium-79965ffb5-c29nt          1/1     Running   0          10d</span>
+<span num="7">plank-79646b78fb-mn796              1/1     Running   0          10d</span>
+<span num="8">sinker-796f7df8cb-tdj5b             1/1     Running   0          10d</span>
+<span num="9">statusreconciler-56b668448f-bm7f9   1/1     Running   0          10d</span>
+<span num="10">tide-6d66ddcb4c-gms2t               1/1     Running   0          10d</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">6</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>What is Prow</h3>
+        
+  <ul>
+  
+    <li>Based on Deployments and Services</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="1">NAME                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE</span>
+<span num="2">service/deck         NodePort    10.104.115.56    &lt;none&gt;        80:30000/TCP     10d</span>
+<span num="3">service/hook         NodePort    10.105.150.158   &lt;none&gt;        8888:30300/TCP   10d</span>
+<span num="4">service/kubernetes   ClusterIP   10.96.0.1        &lt;none&gt;        443/TCP          10d</span>
+<span num="5">service/tide         NodePort    10.109.88.186    &lt;none&gt;        80:30090/TCP     10d</span>
+</pre>
+</div>
+
+  <ul>
+  
+    <li>Where <b>Deck</b> is the UI component</li>
+  
+    <li><b>Hook</b> is the key element for webhooks and redirections (to/from GitHub and to/from plugins)</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>Github /retest comment &gt; Hook &gt; Tide &gt; Trigger jobs</pre></div>
+  
+
+  <ul>
+  
+    <li><b>Tide</b> will take care about testing and merging (once configured) </li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">7</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Control Plane</h3>
+        
+<div class="image">
+  <img src="./Hands_on_Prow_files/core_components.png" width="500">
+</div>
+
+      
+      <span class="pagenumber">8</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Control Plane: Hook</h3>
+        
+<div class="image">
+  <img src="./Hands_on_Prow_files/hook.png" width="180">
+</div>
+
+  <ul>
+  
+    <li><b>Hook</b> is the most important piece. </li>
+  
+    <li>It is a stateless server that listens for GitHub webhooks and dispatches them to the appropriate plugins. </li>
+  
+    <li>Hook's plugins are used to trigger jobs, implement 'slash' commands, post to Slack, and more...</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">9</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Control Plane: Plank</h3>
+        
+  <ul>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/tree/master/prow/plank" target="_blank"><b>Plank</b></a> is the controller that manages the job execution and lifecycle for jobs that run in k8s pods.</li>
+  
+    <li>Decores some of the pod behaviour like Timeout, GracePeriod, etc...</li>
+  
+    <li>Also manages some components like <b>Utility_Images</b></li>
+  
+    <li>Take care about spin up a pod that uploads the artifacts to GCS</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Hands_on_Prow_files/plank.png" width="400">
+</div>
+
+      
+      <span class="pagenumber">10</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Control Plane: Deck</h3>
+        
+  <ul>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/tree/master/prow/cmd/deck" target="_blank"><b>Deck</b></a> is the Prow's WebUI and presents a nice view of recent jobs, among other things</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Hands_on_Prow_files/deck_recent.png" width="750">
+</div>
+
+      
+      <span class="pagenumber">11</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Control Plane: Deck</h3>
+        
+  <ul>
+  
+    <li>The PR current status</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Hands_on_Prow_files/deck_tide.png" width="900">
+</div>
+
+      
+      <span class="pagenumber">12</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Control Plane: Deck</h3>
+        
+  <ul>
+  
+    <li>...and history of merge automation</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Hands_on_Prow_files/deck_tide_history.png" width="900">
+</div>
+
+      
+      <span class="pagenumber">13</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Control Plane: Deck</h3>
+        
+<div class="image">
+  <img src="./Hands_on_Prow_files/deck_tide_pr_status_by_auth.png" height="480" width="730">
+</div>
+
+  <ul>
+  
+    <li>Also a dashboard for PR authors.</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">14</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Control Plane: Horologium and Synker</h3>
+        
+  
+  <p>
+    Both are very simple but useful components
+  </p>
+  
+
+  <ul>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/tree/master/prow/cmd/horologium" target="_blank"><b>Horologium</b></a> triggers periodic jobs when necessary.</li>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/tree/master/prow/cmd/sinker" target="_blank"><b>Sinker</b></a> cleans up old jobs and pods. (works as a GC)</li>
+  
+    <li>Horologium does not have explicit config</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">15</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Control Plane: Tide</h3>
+        
+  <ul>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/blob/master/prow/cmd/tide/README.md" target="_blank"><b>Tide</b></a> manages retesting and merging PRs once they meet the configured merge criteria.</li>
+  
+    <li>Ensure to sync the ConfigMap config with the running config and update it if applies</li>
+  
+    <li>Works with a pool of GitHub PRs that match a given set of criteria</li>
+  
+    <li>It will automatically retest PRs that meet the criteria and automatically merge them when they have up-to-date passing test results</li>
+  
+    <li>Serves live data to populate Tide Dashboard, PR Dashboard and also Tide History page</li>
+  
+    <li>Provides these merge modes: <code>merge</code>, <code>squash</code> and <code>rebase</code></li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">16</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Control Plane: Crier</h3>
+        
+  <ul>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/tree/master/prow/cmd/crier" target="_blank"><b>Crier</b></a> manages the notifications against different providers like slack, github, etc..</li>
+  
+    <li>Reports your prowjobs on their status changes.</li>
+  
+    <li>Communication with providers through API tokens inside of k8s secrets</li>
+  
+  </ul>
+
+  
+  <p>
+    Those are the supported providers:
+  </p>
+  
+
+  <ul>
+  
+    <li>Gerrit</li>
+  
+    <li>Pubsub</li>
+  
+    <li>Github</li>
+  
+    <li>Slack</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">17</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h2>Questions?</h2>
+      
+      <span class="pagenumber">18</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Deploying Prow</h3>
+        
+<div class="image">
+  <img src="./Hands_on_Prow_files/deploying_prow.jpg" width="800">
+</div>
+
+      
+      <span class="pagenumber">19</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Deploying Prow</h3>
+        
+  
+  <p>
+    We have 2 ways to deploy Prow:
+  </p>
+  
+
+  <ul>
+  
+    <li>Using <b>Tackle</b>: This will deploy a K8s cluster on GKE previously to deploy Prow</li>
+  
+    <li><b>Manually</b>: You need to have at least a K8s working w/e you want to deploy, you could use <a href="https://kubernetes.io/docs/setup/production-environment/turnkey/gce/" target="_blank">this guide</a></li>
+  
+  </ul>
+
+  
+  <p>
+    We recommend to use <b>Tackle</b> because in some minutes you will have it Prow working, you will need to follow <a href="https://github.com/kubernetes/test-infra/blob/master/prow/getting_started_deploy.md#tackle-deployment" target="_blank">this procedure</a> and some requirements:
+  </p>
+  
+
+  <ul>
+  
+    <li><a href="https://docs.bazel.build/versions/master/install-redhat.html" target="_blank">Bazel</a> + <a href="https://github.com/kubernetes/test-infra/blob/master/prow/getting_started_deploy.md#tackle-deployment" target="_blank">Tackel</a> + <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/" target="_blank">kubectl client</a> + <a href="https://cloud.google.com/sdk/docs/downloads-yum" target="_blank">gcloud client</a></li>
+  
+    <li>Access to GCE account (Tackle will create a GKE cluster)</li>
+  
+    <li>GitHub Oauth token: To allow bot user to execute actions in your repo/org</li>
+  
+  </ul>
+
+  
+  <p>
+    This is a <a href="https://pastebin.com/raw/2kG0ZKJG" target="_blank">Sample Installation</a> but without SSL (T_T)
+  </p>
+  
+
+      
+      <span class="pagenumber">20</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Deploying Prow</h3>
+        
+  
+  <p>
+    Or <a href="https://github.com/kubernetes/test-infra/blob/master/prow/getting_started_deploy.md#manual-deployment" target="_blank">Manual way</a>:
+  </p>
+  
+
+  
+  <p>
+    With our new fresh K8s cluster we will start working to deploy Prow:
+  </p>
+  
+
+  <ul>
+  
+    <li><a href="https://github.com/jparrill/community/blob/feature/ci_cd_doc/docs/CI-CD/how-to-prow.md#deploying-on" target="_blank">Sample Prow Manual Installation</a> (you could avoid the terraform part)</li>
+  
+  </ul>
+
+  
+  <p>
+    We will summarize all the nesessary steps to make it work (all explained in depth on the previous link):
+  </p>
+  
+
+  <ul>
+  
+    <li>Get into your k8s instance and Install Golang, Bazel, Tackel and some dev requirements</li>
+  
+    <li>Create the proper RBAC and secrets that Prow needs</li>
+  
+    <li>Clone <a href="https://github.com/kubernetes/test-infra.git" target="_blank">test-infra</a> repository, create <code>test-pods</code> NS and apply the <code>prow/cluster/starter.yaml</code> manifest</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">21</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Deploying Prow</h3>
+        
+  
+  <p>
+    Depending on How did you configure your K8s instances you will access to your Prow instances in a way or other:
+  </p>
+  
+
+  <ul>
+  
+    <li>If you are working <b>without</b> GKE and you have <i>all-in-one</i> k8s instance, you could access via NodePorts</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="1">NAME                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE</span>
+<span num="2">service/deck         NodePort    10.104.115.56    &lt;none&gt;        80:30000/TCP     10d</span>
+<span num="3">service/hook         NodePort    10.105.150.158   &lt;none&gt;        8888:30300/TCP   10d</span>
+<span num="4">service/kubernetes   ClusterIP   10.96.0.1        &lt;none&gt;        443/TCP          10d</span>
+<span num="5">service/tide         NodePort    10.109.88.186    &lt;none&gt;        80:30090/TCP     10d</span>
+</pre>
+</div>
+
+  <ul>
+  
+    <li>Otherwise you could access via Ingress through the LoadBalancer that GKE provides you.</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">22</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h2>Questions?</h2>
+      
+      <span class="pagenumber">23</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Configuring Prow</h3>
+        
+<div class="image">
+  <img src="./Hands_on_Prow_files/configure_prow.png">
+</div>
+
+      
+      <span class="pagenumber">24</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Configuring Prow - SSL</h3>
+        
+  
+  <p>
+    To deploy SSL in our cluster we will need some additional requirements
+  </p>
+  
+
+  <ul>
+  
+    <li>Google Domain ".dev" (in my case external to GCE account)</li>
+  
+    <li><a href="https://github.com/the-shadowmen/prow-devconf/blob/master/manifests/ssl/README.md" target="_blank">Some instructions to Deploy Cert-Manager</a></li>
+  
+    <li>Permissions to create LB's on GCE account</li>
+  
+  </ul>
+
+  
+  <p>
+    <b>NOTE</b>: depending on your decission you could go with Let's Encrypt or SelfSigned cert but if you're using a ".dev" domain you should use a real CA to validate your domain.
+  </p>
+  
+
+  <ul>
+  
+    <li>After deploy the Cert-Manager you need to create the <a href="https://github.com/the-shadowmen/prow-devconf/blob/master/manifests/ssl/lets-encrypt/le-clusterissuer.yaml" target="_blank">Issuer/ClusterIssuer</a></li>
+  
+    <li>Then the <a href="https://github.com/the-shadowmen/prow-devconf/blob/master/manifests/ssl/lets-encrypt/le-certificate.yaml" target="_blank">Certificate</a></li>
+  
+    <li>And at last the <a href="https://github.com/the-shadowmen/prow-devconf/blob/master/manifests/ssl/lets-encrypt/le-ingress-ssl.yaml" target="_blank">SSL Ingress</a></li>
+  
+  </ul>
+
+  
+  <p>
+    Check this <a href="https://github.com/the-shadowmen/prow-devconf/blob/master/manifests/ssl/lets-encrypt/README.md" target="_blank">detailed instructions!!</a>
+  </p>
+  
+
+      
+      <span class="pagenumber">25</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Configuring Prow</h3>
+        
+  <ul>
+  
+    <li>Now we need to add the webhook to GitHub. Organization or Repository depending on the admin level that you want to give your bot.</li>
+  
+    <li>You will need a GitHub account to use it as a bot. Our stagging one <a href="https://github.com/janitor-bot" target="_blank">Janitor</a>.</li>
+  
+  </ul>
+
+  
+  <p>
+    You will need to spend some time preparing your config files, here you have our ones that maybe could be useful.
+  </p>
+  
+
+  <ul>
+  
+    <li>Prepare the <a href="https://github.com/the-shadowmen/prow-devconf/blob/master/prow-config/config.yaml" target="_blank">Config file</a> for Prow</li>
+  
+    <li>Prepare the <a href="https://github.com/the-shadowmen/prow-devconf/blob/master/prow-config/plugins.yaml" target="_blank">Plugins file</a> for Prow</li>
+  
+    <li>Prepare the <a href="https://github.com/the-shadowmen/prow-devconf/blob/master/prow-config/labels.yaml" target="_blank">Labels file</a> for Prow</li>
+  
+    <li>Create folder tree and their <a href="https://github.com/the-shadowmen/prow-devconf/blob/master/prow-config/jobs" target="_blank">Jobs</a> for Prow</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">26</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Configuring Prow</h3>
+        
+  
+  <p>
+    Let's go into the different sections of the ConfigFile. We will not review all the possible options, we will work with our sample file ;)
+  </p>
+  
+
+  <ul>
+  
+    <li>Main (no section):</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="1">prowjob_namespace: default</span>
+<span num="2">pod_namespace: test-pods</span>
+<span num="3">log_level: debug</span>
+</pre>
+</div>
+
+  <ul>
+  
+    <li>Sinker:</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="33">sinker:</span>
+<span num="34">  resync_period: 1m</span>
+<span num="35">  max_prowjob_age: 48h</span>
+<span num="36">  max_pod_age: 48h</span>
+<span num="37">  terminated_pod_ttl: 30m</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">27</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Configuring Prow</h3>
+        
+  <ul>
+  
+    <li>Plank:</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="39">plank:</span>
+<span num="40">  job_url_template: 'https://prow.kerbeross.dev/view/gcs/kerbeross-prow-storage/{{if eq .Spec.Type "presubmit"}}pr-logs/pull{{else if eq .Spec.Type "batch"}}pr-logs/pull{{else}}logs{{end}}{{if .Spec.Refs}}{{if ne .Spec.Refs.Org ""}}/{{.Spec.Refs.Org}}_{{.Spec.Refs.Repo}}{{end}}{{end}}{{if eq .Spec.Type "presubmit"}}/{{with index .Spec.Refs.Pulls 0}}{{.Number}}{{end}}{{else if eq .Spec.Type "batch"}}/batch{{end}}/{{.Spec.Job}}/{{.Status.BuildID}}/'</span>
+<span num="41">  job_url_prefix_config: </span>
+<span num="42">    '*': "https://prow.kerbeross.dev/view/gcs/"</span>
+<span num="43">  pod_pending_timeout: 60m</span>
+<span num="44">  default_decoration_configs:</span>
+<span num="45">    '*':</span>
+<span num="46">      timeout: 2h</span>
+<span num="47">      grace_period: 15s</span>
+<span num="48">      utility_images:</span>
+<span num="49">        clonerefs: "gcr.io/k8s-prow/clonerefs:v20200117-903ce628f"</span>
+<span num="50">        initupload: "gcr.io/k8s-prow/initupload:v20200117-903ce628f"</span>
+<span num="51">        entrypoint: "gcr.io/k8s-prow/entrypoint:v20200117-903ce628f"</span>
+<span num="52">        sidecar: "gcr.io/k8s-prow/sidecar:v20200117-903ce628f"</span>
+<span num="53">      gcs_configuration:</span>
+<span num="54">        bucket: "kerbeross-prow-storage"</span>
+<span num="55">        path_strategy: "explicit"</span>
+<span num="56">      gcs_credentials_secret: "gcs"</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">28</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Configuring Prow</h3>
+        
+  <ul>
+  
+    <li><b>Plank</b> needs more explanation here, as you see there are some fields that refers to GCS, this means that Prow takes care about to get the artifacts generated by the Jobs and uploads them to a <a href="https://github.com/kubernetes/test-infra/blob/master/prow/getting_started_deploy.md#configure-cloud-storage" target="_blank">GCS bucket previously configured</a></li>
+  
+  </ul>
+
+  
+  <p>
+    <b>Note:</b> Careful with the file name, must be <code>service-account.json</code>, the secret name is customizable.
+  </p>
+  
+
+  <ul>
+  
+    <li><code>job_url_template:</code> Points to the correct bucket path in order to store the artifacts</li>
+  
+    <li><code>pod_pending_timeout:</code> The time that a pod will wait on Pending until fails</li>
+  
+    <li><code>default_decoration_config:</code> section to extend the pod definition</li>
+  
+    <li><code>utility_images:</code> Images that will take care about different tasks</li>
+  
+    <li><code>gcs_configuration.path_strategy:</code> Explicit means that you set the concrete path with <code>job_url_template</code></li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">29</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Configuring Prow</h3>
+        
+  <div class="code">
+<pre><span num="5">tide:</span>
+<span num="6">  sync_period: 2m</span>
+<span num="7">  merge_method:</span>
+<span num="8">    the-shadowmen/prow-devconf: squash</span>
+<span num="9">    the-shadowmen/kubevirt-tutorial: squash</span>
+<span num="10">    the-shadowmen/kubevirtci: squash</span>
+<span num="11">  queries:</span>
+<span num="12">    - repos:</span>
+<span num="13">        - the-shadowmen/prow-devconf</span>
+<span num="14">        - the-shadowmen/kubevirt-tutorial</span>
+<span num="15">        - the-shadowmen/kubevirtci</span>
+<span num="16">      labels:</span>
+<span num="17">        - lgtm</span>
+<span num="18">        - approved</span>
+<span num="19">      missingLabels:</span>
+<span num="20">        - do-not-merge</span>
+<span num="21">        - do-not-merge/hold</span>
+</pre>
+</div>
+
+  <div class="code">
+<pre><span num="27">  pr_status_base_urls:</span>
+<span num="28">    '*': https://prow.kerbeross.dev/pr</span>
+<span num="29">  context_options:</span>
+<span num="30">    from-branch-protection: false</span>
+<span num="31">    skip-unknown-contexts: true</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">30</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Configuring Prow</h3>
+        
+  
+  <p>
+    In <b>Tide</b> section you set the correct context to manages the automerge:
+  </p>
+  
+
+  <ul>
+  
+    <li>On <code>queries</code> field we set the repositories to work with and the criteria to merge the PRs, in this example we need at least the <code>lgtm</code> and <code>approve</code> tags to perform an auto-merge.</li>
+  
+    <li>Tide will look for <code>missingLabels</code> field in order to check that those tags are not there, otherwise Tide will block the auto-merge. </li>
+  
+    <li><code>pr_status_base_url</code> Is a PR page that shows you the status of your pendings ones. You need to configure <a href="https://github.com/kubernetes/test-infra/blob/master/prow/docs/pr_status_setup.md" target="_blank">this other thing</a> in order to make it work (also have an SSL configured Prow instance) </li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">31</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Configuring Prow</h3>
+        
+  
+  <p>
+    Inside of <b>Deck</b> section and concretelly on spyglass one, we just are telling it that we will have 3 artifacts and are located on those paths
+  </p>
+  
+
+  <div class="code">
+<pre><span num="58">deck:</span>
+<span num="59">  spyglass:</span>
+<span num="60">    size_limit: 500000000 # 500MB</span>
+<span num="61">    viewers:</span>
+<span num="62">      "started.json|finished.json":</span>
+<span num="63">      - "metadata"</span>
+<span num="64">      "build-log.txt":</span>
+<span num="65">      - "buildlog"</span>
+<span num="66">      "artifacts/junit.*\\.xml":</span>
+</pre>
+</div>
+
+  
+  <p>
+    Also on the config file we used to have the <b>Notifiers</b> and the <b>Jobs</b>, we will talk about those in their own section.
+  </p>
+  
+
+      
+      <span class="pagenumber">32</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Configuring Prow</h3>
+        
+  
+  <p>
+    Now we need to verify that the ConfigFile and PluginFile is well formed with a <b>Bazel</b> task and then load it as ConfigMap on the <code>default</code> namespace.
+  </p>
+  
+
+  <ul>
+  
+    <li>Go to the <code>test-infra</code> repo location and execute this command:
+bazel run //prow/cmd/checkconfig -- \
+--plugin-config=$HOME/projects/prow-devconf/prow-config/plugins.yaml \
+--config-path=$HOME/projects/prow-devconf/prow-config/config.yaml \
+--job-config-path=$HOME/projects/prow-devconf/prow-config/jobs</li>
+  
+  </ul>
+
+  <ul>
+  
+    <li>Then load them into K8s <code>default</code> namespace (full path needed):
+kubectl create configmap plugins --from-file=$HOME/prow_conf/plugins.yaml --dry-run -o yaml \
+| kubectl replace configmap plugins -f -  # If the CM already exists</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>kubectl create configmap config --from-file=config.yaml=config.yaml --dry-run -o yaml \
+  | kubectl create configmap config -f -    # If the CM doesn't exists
+
+kubectl create configmap label-config --from-file=$HOME/prow_conf/labels.yaml -o yaml</pre></div>
+  
+
+      
+      <span class="pagenumber">33</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Configuring Prow</h3>
+        
+  
+  <p>
+    Ok, now we have all set to start working with a basic Prow platform, this allows you to manage and automate your Github repository with auto-labelling, approve merges (without auto-merging), etc...
+  </p>
+  
+
+  
+  <p>
+    The capabilities of this depend on what <a href="https://prow.k8s.io/plugins" target="_blank">plugins</a> did you activate on the PluginsConfig file
+<br>
+
+    there are plenty of them, but some of them needs to add additional ConfigMaps/Sections in ConfigFile/etc...
+  </p>
+  
+
+  
+  <p>
+    Let's take a look to plugins...
+  </p>
+  
+
+<div class="image">
+  <img src="./Hands_on_Prow_files/plugins_logo.png" width="200">
+</div>
+
+      
+      <span class="pagenumber">34</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h2>Questions?</h2>
+      
+      <span class="pagenumber">35</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Plugins</h3>
+        
+<div class="image">
+  <img src="./Hands_on_Prow_files/prow_plugins.png" width="800">
+</div>
+
+      
+      <span class="pagenumber">36</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Plugins</h3>
+        
+  
+  <p>
+    Well, Prow plugins a a bunch of resources that give you capabilities on Prow platform. As an example, <b>assign</b> plugin gives the functionality to assign a reviewer to a PR that is already on going.
+  </p>
+  
+
+<div class="image">
+  <img src="./Hands_on_Prow_files/assign_plugin.png" width="400">
+</div>
+
+      
+      <span class="pagenumber">37</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Plugins</h3>
+        
+  
+  <p>
+    This is how looks like part of <a href="https://github.com/the-shadowmen/prow-devconf/blob/master/prow-config/plugins.yaml" target="_blank"><b>PluginsConfig</b></a> file, this one shows the enabled plugins for our organization:
+  </p>
+  
+
+  <div class="code">
+<pre><span num="13">plugins:</span>
+<span num="14">  the-shadowmen:        # Organization</span>
+<span num="15">  - size                # Manages the 'size/*' labels per PR</span>
+<span num="16">  - label               # Base plugin for labeling</span>
+<span num="17">  - hold                # Allows to add or remove the 'do-not-merge/hold'</span>
+<span num="18">  - assign              # Assigns or requests reviews from users.</span>
+<span num="19">  - blunderbuss         # Auto-Assign new PRs created to the reviewers.</span>
+<span num="20">  - lifecycle           # Close, reopen, flag and/or unflag an issue or PR as frozen/stale/rotten</span>
+<span num="21">  - verify-owners       # Validates OWNERS files if they are modified in a PR.</span>
+<span num="22">  - wip                 # Applies the 'do-not-merge/wip' Label to pull requests.</span>
+<span num="23"></span>
+<span num="24">  the-shadowmen/prow-devconf:</span>
+<span num="25">  - trigger</span>
+</pre>
+</div>
+
+  
+  <p>
+    As you see those plugins are enabled for all the organization and you doesn't need to add them for every repo you have. Instead some other plugins need to be enabled by repository to make them work
+  </p>
+  
+
+      
+      <span class="pagenumber">38</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Plugins</h3>
+        
+  
+  <p>
+    Inside of <code>plugins:</code> section we should add every repo and plugins that want to be managed by Prow: 
+  </p>
+  
+
+  <div class="code">
+<pre><span num="31">  the-shadowmen/kubevirt.github.io:</span>
+<span num="32">  - trigger</span>
+<span num="33">  - owners-label</span>
+</pre>
+</div>
+
+  <ul>
+  
+    <li>And depending on the plugin, customize the config with their own configuration appart form <code>plugins:</code> section</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="68">lgtm:</span>
+<span num="69">- repos:</span>
+<span num="70">  - the-shadowmen/kubevirt-tutorial</span>
+<span num="71">  - the-shadowmen/kubevirtci</span>
+<span num="72">  - the-shadowmen/prow-devconf</span>
+<span num="73">  review_acts_as_lgtm: true</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">39</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Plugins</h3>
+        
+  
+  <p>
+    Some plugins needs additional Config sections on Prow ConfigFile or maybe needs Additional services to be working properly, like <i>lgtm</i>, <i>approve</i>, or <i>trigger</i>. All of them has a thing in common, are managed by the same service <b>Tide</b>, which needs to be properly configured.
+  </p>
+  
+
+  
+  <p>
+    As we said before:
+  </p>
+  
+
+  <ul>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/blob/master/prow/cmd/tide/README.md" target="_blank"><b>Tide</b></a> manages retesting and merging PRs once they meet the configured merge criteria.</li>
+  
+  </ul>
+
+  
+  <p>
+    Also interacts with <b>Plank</b> in order to trigger Jobs
+  </p>
+  
+
+      
+      <span class="pagenumber">40</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow plugins: config-updater</h3>
+        
+  
+  <p>
+    As you see, the config and the Jobs are mixed in the same ConfigMap/File, this is weird isn't it?
+<br>
+
+    Well this is what you need:
+  </p>
+  
+
+<div class="image">
+  <img src="./Hands_on_Prow_files/config_updater.png" width="400">
+</div>
+
+      
+      <span class="pagenumber">41</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow plugins: config-updater</h3>
+        
+  
+  <p>
+    Config updater redeploys configuration and plugin configuration files when they change and allows you to keep separated your Jobs from your config.
+  </p>
+  
+
+  <ul>
+  
+    <li>Just add the configuration to your <code>plugins.yaml</code>:</li>
+  
+  </ul>
+
+  <div class="code" contenteditable="true" spellcheck="false">
+<pre contenteditable="true" spellcheck="false"><span num="2">config_updater:                 # Config Updater section</span>
+<span num="3">  maps:</span>
+<span num="4">    prow-config/config.yaml:    # It will take the Config from this path</span>
+<span num="5">      name: config</span>
+<span num="6">    prow-config/jobs/**/*.yaml: # It will take the Jobs from this path</span>
+<span num="7">      name: job-config</span>
+<span num="8">    prow-config/plugins.yaml:   # It will take the Plugins from this path</span>
+<span num="9">      name: plugins</span>
+<span num="10">    prow-config/labels.yaml:    # It will take the Labels from this path</span>
+<span num="11">      name: label-config</span>
+</pre>
+</div>
+
+  
+  <p>
+    <b>Note</b>: Ensure you've been validated that the config, plugins and jobs are correctly set on their files with checkconfig.
+  </p>
+  
+
+      
+      <span class="pagenumber">42</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow plugins: config-updater</h3>
+        
+  
+  <p>
+    After that you will need to add the config-updater to the repo that contains the data:
+  </p>
+  
+
+  <div class="code">
+<pre><span num="24">  the-shadowmen/prow-devconf:</span>
+<span num="25">  - trigger</span>
+<span num="26">  - owners-label</span>
+<span num="27">  - lgtm</span>
+<span num="28">  - approve</span>
+<span num="29">  - config-updater</span>
+</pre>
+</div>
+
+  
+  <p>
+    This is the link between the repo and the config. Then the plugin will create the ConfigMaps:
+  </p>
+  
+
+  
+  <div class="code"><pre>NAME                     DATA   AGE
+config                   1      2d2h
+job-config               1      17h
+label-config             1      20h
+plugins                  1      2d2h</pre></div>
+  
+
+      
+      <span class="pagenumber">43</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow plugins: config-updater</h3>
+        
+  
+  <p>
+    In order to let prow know that you are using a separated ConfigMap to the deployments, you need to patch the <code>deck</code>, <code>hook</code>, <code>horologium</code>, <code>plank</code>, <code>sinker</code>, <code>tide</code> and <code>statusreconciler</code>, <a href="https://github.com/kubernetes/test-infra/search?l=YAML&amp;q=--job-config-path%3D%2Fetc%2Fjob-config" target="_blank">with this changes</a>:
+  </p>
+  
+
+  <ul>
+  
+    <li>on container args section:
+
+- --job-config-path=/etc/job-config</li>
+  
+  </ul>
+
+  <ul>
+  
+    <li>on volumeMounts section:</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>- mountPath: /etc/job-config
+  name: job-config
+  readOnly: true</pre></div>
+  
+
+  <ul>
+  
+    <li>on Volume section:
+
+- configMap:
+defaultMode: 420
+name: job-config
+name: job-config</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">44</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow plugins: config-updater</h3>
+        
+<div class="image">
+  <img src="./Hands_on_Prow_files/jobs_tree.png" width="700">
+</div>
+
+      
+      <span class="pagenumber">45</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow plugins: config-updater</h3>
+        
+  <ul>
+  
+    <li><a href="https://github.com/the-shadowmen/prow-devconf/pull/3" target="_blank">PR Sample</a></li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Hands_on_Prow_files/PR_merged.png">
+</div>
+
+      
+      <span class="pagenumber">46</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow plugins: Approvers/Owner-labels</h3>
+        
+  
+  <p>
+    Owners will allow you to set reviewers and approvers by folder or setting up somefilters in your managed repositories.
+  </p>
+  
+
+  
+  <p>
+    To make it work you only need to enable the plugin in the repo config and after that, create a <code>OWNERS</code> file in the desired folder, it will have this format:
+  </p>
+  
+
+  <div class="code">
+<pre><span num="3">    reviewers:</span>
+<span num="4">      - codificat</span>
+<span num="5">      - jparrill</span>
+<span num="6">      - iranzo</span>
+<span num="7">    approvers:</span>
+<span num="8">      - iranzo</span>
+<span num="9">      - ptrnull</span>
+<span num="10">    emeritus_approvers:</span>
+<span num="11">      - karmab # 10 july 2019</span>
+<span num="12">      - tripledes # 10 july 2019</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">47</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow plugins: Approvers/Owner-labels</h3>
+        
+  <div class="code">
+<pre><span num="1">filters:</span>
+<span num="2">  ".*":</span>
+<span num="3">    reviewers:</span>
+<span num="4">      - codificat</span>
+<span num="5">      - jparrill</span>
+<span num="6">      - iranzo</span>
+<span num="7">    approvers:</span>
+<span num="8">      - iranzo</span>
+<span num="9">      - ptrnull</span>
+<span num="10">    emeritus_approvers:</span>
+<span num="11">      - karmab # 10 july 2019</span>
+<span num="12">      - tripledes # 10 july 2019</span>
+<span num="13">## This part is for owner-labels</span>
+<span num="14">  "^_posts/.*":</span>
+<span num="15">    labels:</span>
+<span num="16">      - kind/blog</span>
+<span num="17">  "^_(data|layouts|sass|css|js)/.*":</span>
+<span num="18">    labels:</span>
+<span num="19">      - kind/website</span>
+</pre>
+</div>
+
+  
+  <p>
+    This is a <a href="https://github.com/the-shadowmen/kubevirt.github.io/blob/master/OWNERS" target="_blank">real sample of filters</a>
+  </p>
+  
+
+      
+      <span class="pagenumber">48</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow plugins: Approvers/Owner-labels</h3>
+        
+  
+  <p>
+    This is a very good example about how to configure Prow Jobs among multiple work groups:
+  </p>
+  
+
+  <ul>
+  
+    <li><a href="https://github.com/kubevirt/project-infra/tree/master/github/ci/prow/files/jobs" target="_blank">Kubevirt Example</a></li>
+  
+  </ul>
+
+  
+  <p>
+    The folders have their own <code>OWNERS</code> file and every job file have the kind of job followed by the repo name: <b>kubevirt-tutorial-presubmits.yaml</b> 
+<br>
+
+    and the <code>OWNERS</code> file is like:
+  </p>
+  
+
+  
+  <div class="code"><pre>reviewers:
+  - codificat
+  - iranzo
+  - ptrnull
+  - jparrill
+approvers:
+  - jparrill
+  - codificat
+  - iranzo
+  - ptrnull</pre></div>
+  
+
+      
+      <span class="pagenumber">49</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow plugins: Others</h3>
+        
+  <ul>
+  
+    <li>Trigger: This will allow you to trigger tests on desired repositories</li>
+  
+    <li>Lgtm: Using <code>/lgtm</code> act as review on a PR</li>
+  
+    <li>Approve: Approves a PR using <code>/approve</code></li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">50</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h2>Questions?</h2>
+      
+      <span class="pagenumber">51</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Auto-management of your GitHub repo</h3>
+        
+<div class="image">
+  <img src="./Hands_on_Prow_files/bot_bender.png" width="350">
+</div>
+
+      
+      <span class="pagenumber">52</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Auto-management of your GitHub repo</h3>
+        
+  
+  <p>
+    In order to manage out repo automatically, we need to go through our <a href="https://github.com/the-shadowmen/prow-devconf/blob/master/prow-conf/config.yaml" target="_blank">Config file</a>. You need to ensure that you've filled these sections properly
+  </p>
+  
+
+  <ul>
+  
+    <li>Plank: to have the utility images ready and GCS bucket linked to upload artifacts</li>
+  
+    <li>Tide: To manages automerge and testing jobs</li>
+  
+    <li>Deck: To describe the resultant artifacts to be uploaded to GCS</li>
+  
+  </ul>
+
+  
+  <p>
+    You also need to have the Github Webhook pointing properly to your Hook service on K8s on your Github Org
+  </p>
+  
+
+<div class="image">
+  <img src="./Hands_on_Prow_files/webhook_github.png">
+</div>
+
+      
+      <span class="pagenumber">53</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Auto-management of your GitHub repo</h3>
+        
+  
+  <p>
+    There is not a great way to bake the config, because the documentation is not good and you need to go through the code to know all the config statements, but you at least you have a clear workflow to follow.
+  </p>
+  
+
+  <ul>
+  
+    <li>Prepare your new config</li>
+  
+    <li>Check it with the <b>Bazel</b> job <code>checkconfig</code> (as we saw before)
+bazel run //prow/cmd/checkconfig -- \
+--plugin-config=$HOME/projects/prow-devconf/prow-config/plugins.yaml \
+--config-path=$HOME/projects/prow-devconf/prow-config/config.yaml \
+--job-config-path=$HOME/projects/prow-devconf/prow-config/jobs</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Hands_on_Prow_files/safety_first.png" width="250">
+</div>
+
+      
+      <span class="pagenumber">54</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Auto-management of your GitHub repo</h3>
+        
+  <ul>
+  
+    <li>Upload the ConfigMap</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>kubectl create configmap plugins --from-file=plugins.yaml=$HOME/prow_conf/plugins.yaml \
+  --dry-run -o yaml | kubectl replace configmap plugins -f -
+
+kubectl create configmap config --from-file=config.yaml=$HOME/prow_conf/config.yaml \
+  --dry-run -o yaml | kubectl replace configmap config -f -
+
+kubectl create configmap label-config --from-file=labels.yaml=$HOME/prow_conf/labels.yaml \
+  --dry-run -o yaml | kubectl replace configmap label-config -f -</pre></div>
+  
+
+  
+  <p>
+    This will allow you to start with Prow Jobs easily.
+  </p>
+  
+
+<div class="image">
+  <img src="./Hands_on_Prow_files/ci_cd.png" width="450">
+</div>
+
+      
+      <span class="pagenumber">55</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h2>Questions?</h2>
+      
+      <span class="pagenumber">56</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Testing with Prow</h3>
+        
+<div class="image">
+  <img src="./Hands_on_Prow_files/test_section.jpg" width="750">
+</div>
+
+      
+      <span class="pagenumber">57</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Testing with Prow</h3>
+        
+  
+  <p>
+    If you'd been set the config as we followed, I've good news for you!
+  </p>
+  
+
+<div class="image">
+  <img src="./Hands_on_Prow_files/long_way.jpg">
+</div>
+
+  
+  <p>
+    You should be able to execute testing right now! <b>\o/</b>
+  </p>
+  
+
+      
+      <span class="pagenumber">58</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Testing with Prow</h3>
+        
+  
+  <p>
+    The Prow jobs works in the same way as you spin up an application in K8s, just select a <b>Base</b> <b>Image</b> to work with, the <b>EntryPoint</b>, <b>Volumes</b>, <b>Env</b> <b>variables</b>, <b>NodeSelector</b> (in order to use concrete nodes in a kind of test).
+  </p>
+  
+
+  
+  <p>
+    Let's see what kind of Jobs we have and how to configure them.
+  </p>
+  
+
+  
+  <p>
+    <b>Periodic:</b>
+  </p>
+  
+
+  <ul>
+  
+    <li>The component that will take care about trigger this jobs is <b>Horologium</b></li>
+  
+    <li>These are context free jobs.</li>
+  
+    <li>Will be executed in a pace that you decide.</li>
+  
+    <li>You cannot set a Repository to work with (as we do with others)</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">59</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Testing with Prow</h3>
+        
+  
+  <p>
+    This is how looks like the <b>Periodic</b> Job spec:
+  </p>
+  
+
+  <div class="code" contenteditable="true" spellcheck="false">
+<pre contenteditable="true" spellcheck="false"><span num="2">periodics:</span>
+<span num="3">  - interval: 24h</span>
+<span num="4">    name: kubevirt-io-periodic-link-checker</span>
+<span num="5">    decorate: true      # The pod will be decorated with our special config</span>
+<span num="6">    always_run: true    # Tests always run</span>
+<span num="7">    extra_refs:</span>
+<span num="8">    - org: the-shadowmen</span>
+<span num="9">      repo: kubevirt.github.io</span>
+<span num="10">      base_ref: master</span>
+<span num="11">      path_alias: kubevirt.github.io skip_report: false  # Avoid to report the Job status</span>
+<span num="12">    spec:</span>
+<span num="13">      nodeSelector:</span>
+<span num="14">        region: primary</span>
+<span num="15">      containers:</span>
+<span num="16">        - image: docker.io/library/ruby</span>
+<span num="17">          env:</span>
+<span num="18">            - name: NOKOGIRI_USE_SYSTEM_LIBRARIES</span>
+<span num="19">              value: "true"</span>
+<span num="20">          command: ["/bin/sh", "-c"]</span>
+<span num="21">          args: ["/usr/local/bin/bundle install &amp;&amp; bundle exec rake"]</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">60</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Testing with Prow</h3>
+        
+  
+  <p>
+    <b>Presubmit:</b>
+  </p>
+  
+
+  <ul>
+  
+    <li>The components that will take care about trigger this jobs are <b>Hook</b>, <b>Plugins</b> <code>or|and</code> <b>Tide</b>.</li>
+  
+    <li>This jobs are triggered <b>when</b> <b>a</b> <b>PR</b> <b>is</b> <b>Created</b> and will execute the tests directly on the proper branch <b>BEFORE</b> the merge happens.</li>
+  
+    <li>These jobs have context, then you need to put the repostitory to watch.</li>
+  
+    <li>Github will trigger a notification when the webhook criteria match, against the <b>Hook</b> service.</li>
+  
+    <li>From that <b>Plugins</b> comes in action and do their thing, after that sometimes the workflow ends here.</li>
+  
+    <li>Other times <b>Tide</b> will continue it managing the situation in case of <code>/test</code> or PR merge</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">61</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Testing with Prow</h3>
+        
+  
+  <p>
+    This is how looks like the <b>Presubmit</b> Job spec:
+  </p>
+  
+
+  <div class="code" contenteditable="true" spellcheck="false">
+<pre contenteditable="true" spellcheck="false"><span num="40">presubmits:</span>
+<span num="41">  the-shadowmen/kubevirt.github.io:</span>
+<span num="42">    - name: kubevirt-io-presubmit-link-checker</span>
+<span num="43">      decorate: true      # The pod will be decorated with our special config</span>
+<span num="44">      always_run: true    # Tests always run</span>
+<span num="45">      skip_report: false  # Avoid to report the Job status</span>
+<span num="46">      spec:</span>
+<span num="47">        nodeSelector:</span>
+<span num="48">          region: primary</span>
+<span num="49">        containers:</span>
+<span num="50">          - image: docker.io/library/ruby</span>
+<span num="51">            env:</span>
+<span num="52">              - name: NOKOGIRI_USE_SYSTEM_LIBRARIES</span>
+<span num="53">                value: "true"</span>
+<span num="54">            command: ["/bin/sh", "-c"]</span>
+<span num="55">            args: ["/usr/local/bin/bundle install &amp;&amp; bundle exec rake"]</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">62</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Testing with Prow</h3>
+        
+  
+  <p>
+    <b>Postsubmit:</b>
+  </p>
+  
+
+  <ul>
+  
+    <li>The components that will take care about trigger this jobs are <b>Hook</b>, <b>Plugins</b> and <b>Tide</b>.</li>
+  
+    <li>These jobs are triggered <b>when</b> <b>a</b> <b>PR</b> <b>is</b> <b>Merged</b> and will execute the tests directly on the proper branch <b>AFTER</b> the merge happens.</li>
+  
+    <li>These jobs have context, then you need to put the repostitory to watch.</li>
+  
+    <li>Github will trigger a notification when the webhook criteria match, against the <b>Hook</b> service.</li>
+  
+    <li>From that <b>Plugins</b> comes in action and do their thing, after that will notify <b>Tide</b>.</li>
+  
+    <li>Other times <b>Tide</b> will finish it executing the proper tests.</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">63</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Testing with Prow</h3>
+        
+  
+  <p>
+    This is how looks like the <b>Postsubmit</b> Job spec:
+  </p>
+  
+
+  <div class="code" contenteditable="true" spellcheck="false">
+<pre contenteditable="true" spellcheck="false"><span num="23">postsubmits:</span>
+<span num="24">  the-shadowmen/kubevirt.github.io:</span>
+<span num="25">    - name: kubevirt-io-postsubmit-link-checker</span>
+<span num="26">      decorate: true      # The pod will be decorated with our special config</span>
+<span num="27">      always_run: true    # Tests always run</span>
+<span num="28">      skip_report: false  # Avoid to report the Job status</span>
+<span num="29">      spec:</span>
+<span num="30">        nodeSelector:</span>
+<span num="31">          region: primary</span>
+<span num="32">        containers:</span>
+<span num="33">          - image: docker.io/library/ruby</span>
+<span num="34">            env:</span>
+<span num="35">              - name: NOKOGIRI_USE_SYSTEM_LIBRARIES</span>
+<span num="36">                value: "true"</span>
+<span num="37">            command: ["/bin/sh", "-c"]</span>
+<span num="38">            args: ["/usr/local/bin/bundle install &amp;&amp; bundle exec rake"]</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">64</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h2>Questions?</h2>
+      
+      <span class="pagenumber">65</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Notifications</h3>
+        
+<div class="image">
+  <img src="./Hands_on_Prow_files/notif_logo.png" width="350">
+</div>
+
+      
+      <span class="pagenumber">66</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Notifications</h3>
+        
+  
+  <p>
+    For <b>Presubmits</b> and <b>Postsubmits</b> jobs are not necessary to have these because GitHub manage the notifications, but what happens when a <b>Periodic</b> job fails? who will let me know about?, well <b>Crier</b> is here to save the day :).
+  </p>
+  
+
+  
+  <p>
+    This is not a mandatory service to work, but recommendable, as we said before:
+  </p>
+  
+
+  <ul>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/tree/master/prow/cmd/crier" target="_blank"><b>Crier</b></a> manages the notifications against different providers like slack, github, etc..</li>
+  
+    <li>Reports your prowjobs on their status changes.</li>
+  
+    <li>Communication with providers through API tokens inside of k8s secrets</li>
+  
+  </ul>
+
+  
+  <p>
+    Those are the supported providers:
+  </p>
+  
+
+  <ul>
+  
+    <li>Gerrit</li>
+  
+    <li>Pubsub</li>
+  
+    <li>Github</li>
+  
+    <li>Slack</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">67</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Notifications</h3>
+        
+  
+  <p>
+    To Configure Crier you could <a href="https://github.com/kubernetes/test-infra/tree/master/prow/cmd/crier" target="_blank">follow this guide</a> or <a href="https://github.com/the-shadowmen/nostromo/blob/master/docs/how-to-prow.md#managing-notifications" target="_blank">this one</a>, but let's summarize:
+  </p>
+  
+
+  <ul>
+  
+    <li>With <a href="https://github.com/kubernetes/test-infra.git" target="_blank">test-infra</a> repo, apply the RBAC manifest from <code>test-infra/prow/cluster/crier_rbac.yaml</code></li>
+  
+    <li>Patch <b>Crier</b> manifest with <code>--slack-workers=n</code> and <code>--slack-token-file=/etc/slack-api-token</code> it is on <code>test-infra/prow/cluster/crier_deployment.yaml</code></li>
+  
+    <li>Deploy <b>Crier</b> on your control plane </li>
+  
+    <li>Get a Slack API Token and put it inside of a secret.
+kubectl create secret generic slack-api-token \
+--from-file=slack-api-token=$HOME/private/SLACK-API-TOKEN</li>
+  
+    <li>Mount the Slack API Token Secret on the Jobs directly, at <code>/etc/slack-api-token</code> path</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">68</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>Prow Notifications</h3>
+        
+  <ul>
+  
+    <li>Modify the Prow's ConfigMap adding a <code>slack_reporter</code> section including the desired configuration:</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="71">slack_reporter:</span>
+<span num="72">  job_types_to_report:</span>
+<span num="73">  - presubmit</span>
+<span num="74">  - postsubmit</span>
+<span num="75">  - periodic</span>
+<span num="76">  - batch</span>
+<span num="77">  job_states_to_report:</span>
+<span num="78">  - triggered</span>
+<span num="79">  - pending</span>
+<span num="80">  - success</span>
+<span num="81">  - failure</span>
+<span num="82">  - aborted</span>
+<span num="83">  - error</span>
+<span num="84">  channel: team-kni-community</span>
+<span num="85">  # The template shown below is the default</span>
+<span num="86">  report_template: 'Job {{.Spec.Job}} of type {{.Spec.Type}} ended with state {{.Status.State}}. &lt;{{.Status.URL}}|View logs&gt;'</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">69</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h2>Questions?</h2>
+      
+      <span class="pagenumber">70</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>References</h3>
+        
+<div class="image">
+  <img src="./Hands_on_Prow_files/references_logo.png" width="700">
+</div>
+
+      
+      <span class="pagenumber">71</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>References</h3>
+        
+  
+  <p>
+    <b>Introduction:</b>
+  </p>
+  
+
+  <ul>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/blob/master/prow/README.md" target="_blank">Readme file</a></li>
+  
+    <li><a href="https://prow.k8s.io/command-help" target="_blank">Command Help</a> </li>
+  
+    <li><a href="https://godoc.org/k8s.io/test-infra/prow" target="_blank">Prow Go Doc</a> </li>
+  
+    <li><a href="https://kurtmadel.com/posts/native-kubernetes-continuous-delivery/prow/" target="_blank">Mandatory Article to read</a> </li>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/blob/master/prow/getting_started_deploy.md" target="_blank">Prow Quickstart</a> </li>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/blob/master/prow/cmd/README.md#core-components" target="_blank">Prow Images</a> </li>
+  
+    <li><a href="https://raw.githubusercontent.com/kubernetes/test-infra/master/prow/docs/pr-interactions-sequence.svg?sanitize=true" target="_blank">Prow PR Workflow</a></li>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/blob/master/prow/cmd/tide/maintainers.md#best-practices" target="_blank">Prow Best Practices</a> </li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">72</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>References</h3>
+        
+  
+  <p>
+    <b>Prow</b> <b>Plugins:</b>
+  </p>
+  
+
+  <ul>
+  
+    <li><a href="https://prow.k8s.io/plugins" target="_blank">Prow Plugins</a> </li>
+  
+    <li><a href="https://github.com/kubernetes/community/blob/master/contributors/guide/owners.md#the-code-review-process" target="_blank">Prow Code-Review process</a> </li>
+  
+  </ul>
+
+  
+  <p>
+    <b>Prow</b> <b>Jobs:</b>
+  </p>
+  
+
+  <ul>
+  
+    <li><a href="https://kurtmadel.com/posts/native-kubernetes-continuous-delivery/prow/#prow-is-a-ci-cd-job-executor" target="_blank">Prow Jobs overview</a> </li>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/blob/master/prow/life_of_a_prow_job.md" target="_blank">Life of a Prow Job</a> </li>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/tree/c8829eef589a044126289cb5b4dc8e85db3ea22f/prow/cmd/phony/examples" target="_blank">Webhook Payload sample</a> </li>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md" target="_blank">Deep dive Jobs</a></li>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/tree/master/prow/cmd/phaino" target="_blank">Phaino</a></li>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/blob/master/prow/cmd/tide/config.md" target="_blank">Tide Config</a></li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">73</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>References</h3>
+        
+  
+  <p>
+    <b>Prow</b> <b>SSL:</b>
+  </p>
+  
+
+  <ul>
+  
+    <li><a href="https://github.com/the-shadowmen/prow-devconf/tree/master/manifests/ssl/README.md" target="_blank">Cert-Manager Installation for this talk</a></li>
+  
+    <li><a href="https://github.com/the-shadowmen/prow-devconf/blob/master/manifests/ssl/lets-encrypt/README.md" target="_blank">Prow-SSL Installation for this talk</a></li>
+  
+    <li><a href="https://github.com/kubernetes/test-infra/blob/master/prow/getting_started_deploy.md#configure-ssl" target="_blank">Configure SSL</a> </li>
+  
+    <li><a href="https://github.com/jetstack/cert-manager" target="_blank">Cert Manager</a></li>
+  
+    <li><a href="https://github.com/jetstack/cert-manager/blob/master/docs/tutorials/acme/quick-start/index.rst" target="_blank">Cert Manager Tutorial</a></li>
+  
+  </ul>
+
+  
+  <p>
+    <b>Others:</b>
+  </p>
+  
+
+  <ul>
+  
+    <li><a href="https://kurtmadel.com/posts/native-kubernetes-continuous-delivery/native-k8s-cd/" target="_blank">Another useful Article</a> </li>
+  
+    <li><a href="https://github.com/kubevirt/project-infra" target="_blank">Kubevirt Project-Infra</a> A great example of how to manage Prow config and some config files to use it as reference</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">74</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;img/background.png&#39;)">
+      
+        <h3>The end</h3>
+        
+<div class="image">
+  <img src="./Hands_on_Prow_files/the_end.jpg" width="650">
+</div>
+
+      
+      <span class="pagenumber">75</span>
+      </article>
+  
+  
+
+      <article>
+        <h3>Thank you</h3>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    Juan Manuel Parrilla
+  </p>
+  
+
+  
+  <p>
+    Senior Software Engineer, Red Hat
+  </p>
+  
+<p class="link"><a href="mailto:jparrill@redhat.com" target="_blank">jparrill@redhat.com</a></p><p class="link"><a href="https://github.com/jparrill/HandsOnProw" target="_blank">https://github.com/jparrill/HandsOnProw</a></p><p class="link"><a href="http://twitter.com/kerbeross" target="_blank">@kerbeross</a></p>
+          </div>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    
+  </p>
+  
+
+          </div>
+        
+      </article>
+
+    <div class="slide-area" id="prev-slide-area"></div><div class="slide-area" id="next-slide-area"></div></section>
+
+    <div id="help" style="display: none;">
+      Use the left and right arrow keys or click the left and right
+      edges of the page to navigate between slides.<br>
+      (Press 'H' or navigate to hide this message.)
+    </div>
+
+    
+    <script src="./Hands_on_Prow_files/play.js"></script>
+    
+
+    <script>
+      (function() {
+        
+        if (window["location"] && window["location"]["hostname"] == "talks.golang.org") {
+          var ga = document.createElement("script"); ga.type = "text/javascript"; ga.async = true;
+          ga.src = ("https:" == document.location.protocol ? "https://ssl" : "http://www") + ".google-analytics.com/ga.js";
+          var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ga, s);
+        }
+      })();
+    </script>
+  
+
+<link rel="stylesheet" type="text/css" href="./Hands_on_Prow_files/css(1)"><link rel="stylesheet" type="text/css" href="./Hands_on_Prow_files/styles.css"></body><nordvpn-contentscript-extension-mount-3.6.0><template shadowrootmode="open"><link rel="stylesheet" href="chrome-extension://fjoaledfpmneenckfbpdfhkmimnjocfa/csHttp.bundle.css"><div id="nordvpn-contentScript-extension-root-3.6.0" style="position: fixed; left: 0px; top: 0px; z-index: 2147483647;"></div></template></nordvpn-contentscript-extension-mount-3.6.0></html>

@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<!-- saved from url=(0052)http://127.0.0.1:3999/openshift-disconnected.slide#1 -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Openshift in a Disconnected world</title>
+    
+    <script>
+      var notesEnabled =  false ;
+    </script>
+    <script src="./Openshift_in_a_Disconnected_world_files/slides.js"></script>
+
+    
+
+    <script>
+      
+      if (window["location"] && window["location"]["hostname"] == "talks.golang.org") {
+        var _gaq = _gaq || [];
+        _gaq.push(["_setAccount", "UA-11222381-6"]);
+        _gaq.push(["b._setAccount", "UA-49880327-6"]);
+        window.trackPageview = function() {
+          _gaq.push(["_trackPageview", location.pathname+location.hash]);
+          _gaq.push(["b._trackPageview", location.pathname+location.hash]);
+        };
+        window.trackPageview();
+        window.trackEvent = function(category, action, opt_label, opt_value, opt_noninteraction) {
+          _gaq.push(["_trackEvent", category, action, opt_label, opt_value, opt_noninteraction]);
+          _gaq.push(["b._trackEvent", category, action, opt_label, opt_value, opt_noninteraction]);
+        };
+      }
+    </script>
+  <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1"><meta name="apple-mobile-web-app-capable" content="yes"><link id="nordvpn-contentScript-extension-fonts" rel="stylesheet" href="./Openshift_in_a_Disconnected_world_files/css"></head>
+
+  <body style="display: none" class="loaded">
+
+    <section class="slides layout-widescreen">
+
+      <article class="current">
+        <h1>Openshift in a Disconnected world</h1>
+        
+        <h3>21 September 2021</h3>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    Juan Manuel Parrilla
+  </p>
+  
+
+  
+  <p>
+    Principal Software Engineer, Red Hat
+  </p>
+  
+
+          </div>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    Mario Vazquez Cebrian
+  </p>
+  
+
+  
+  <p>
+    Principal Software Engineer, Red Hat
+  </p>
+  
+
+          </div>
+        
+      </article>
+
+  
+  
+      <article class="background next" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>The disconnected environments are dark places!</h3>
+        
+<div class="image">
+  <img src="./Openshift_in_a_Disconnected_world_files/zelda.jpg" height="400" width="600">
+</div>
+
+  
+  <p>
+    Be sure you check the documentation before to start dealing with a real one!
+  </p>
+  
+
+      
+      <span class="pagenumber">2</span>
+      </article>
+  
+  
+  
+      <article class="background far-next" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>Index</h3>
+        
+  <ul>
+  
+    <li>Pre-requisites</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>- The Helper node
+- Kernel Parameters
+- Additional Services: DHCP, DNS, etc...
+- Container Image Sync
+- Download RHCOS Resources
+- Networking
+- The install-config file
+- CatalogSources and ICSPs</pre></div>
+  
+
+  <ul>
+  
+    <li>OCP Deployment
+
+- UPI/IPI
+- Deployment Customization</li>
+  
+  </ul>
+
+  <ul>
+  
+    <li>Filling the Marketplace </li>
+  
+    <li>Openshift and Operators Life-cycle</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">3</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h2>Pre-requisites</h2>
+      
+      <span class="pagenumber">4</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>Pre-requisites: Helper Node</h3>
+        
+  
+  <p>
+    Basically all pre-requisites comes from the <b>helper</b> <b>node</b>. We call a helper node to that one which gives the basic services to that environment, like DNS, DHCP, HTTPD, etc... So let's create a list of services necessary to make this work:
+  </p>
+  
+
+<div class="image">
+  <img src="./Openshift_in_a_Disconnected_world_files/pre-reqs.png" height="370" width="780">
+</div>
+
+      
+      <span class="pagenumber">5</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>Pre-requisites: Helper Node</h3>
+        
+  
+  <p>
+    We can classify them as you see in the diagram:
+  </p>
+  
+
+  <ul>
+  
+    <li>Mandatory</li>
+  
+    <li>Mandatory for Disconnected</li>
+  
+    <li>Mandatory for IPv6</li>
+  
+    <li>Optional Components</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">6</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>Pre-requisites: Helper Node</h3>
+        
+  <ul>
+  
+    <li>As <b>DNS</b> and <b>DHCP</b> we will use <code>Dnsmasq</code> software because it can hold both configs.</li>
+  
+    <li>For <b>NTP</b> we will use <code>Chrony</code></li>
+  
+    <li>For <b>Internal</b> <b>Registry</b> we will use a podman container with a basic image registry</li>
+  
+    <li>For the <b>HTTP</b> server we will use <code>HTTPD</code></li>
+  
+    <li>For RA's and route spreading on the IPv6 environment we will use RaDVD</li>
+  
+    <li>To allow access to the Openshift Console and the BMC's we will have an <b>HAProxy</b> that makes the IPv4&gt;IPv6 translation</li>
+  
+  </ul>
+
+  
+  <p>
+    These are the basic components on the Helper Node.
+  </p>
+  
+
+      
+      <span class="pagenumber">7</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>Pre-requisites: Kernel Parameters</h3>
+        
+  
+  <p>
+    Another important things to make sure the services on the Helper Node works fine, we need to add these config to the Kernel:
+  </p>
+  
+
+  
+  <div class="code"><pre># Enable IPv6 Forwading for all interfaces
+net.ipv6.conf.all.forwarding=1
+
+# Accept RA's even if forwarding is enabled
+net.ipv6.conf.all.accept_ra=2
+
+# Reverse Path not validated
+net.ipv4.conf.all.rp_filter=0
+
+# Disable IPv6 Loopback config
+net.ipv6.conf.lo.disable_ipv6=0</pre></div>
+  
+<p class="link"><a href="https://sysctl-explorer.net/" target="_blank">sysctl-explorer.net</a></p>
+      
+      <span class="pagenumber">8</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>Pre-requisites: Additional Services</h3>
+        
+  
+  <p>
+    Firstly we need a couple of mandatory services, they will be DNS and NTP.
+  </p>
+  
+
+  <ul>
+  
+    <li>DNS needs to at least resolve the main openshift addresses, which are the Ingress, the API and the api-int, also the OCP master nodes and lastly our helper node. (This last one for the Image Registry.</li>
+  
+    <li>The NTP is also mandatory in a multinode deployment, we usually put a server on the Helper node and allow the network we are on the <code>chrony.conf</code></li>
+  
+    <li>The Pull Secret is to get the proper access to the images for the installation and Image Synchronization process</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">9</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>Pre-requisites: Image Sync</h3>
+        
+  
+  <p>
+    To start the image synchronization for the OCP installation it's quite easy, we will just need to :
+  </p>
+  
+
+  <ul>
+  
+    <li>Create a TLS Certificate for our registry with the proper DNS name (it should be SSL)</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="4">host_fqdn=$(hostname --long)</span>
+<span num="5">path=/opt/registry</span>
+<span num="6">cert_c="US"            # Country Name (C, 2 letter code)</span>
+<span num="7">cert_s="California"    # Certificate State (S)</span>
+<span num="8">cert_l="SOL"           # Certificate Locality (L)</span>
+<span num="9">cert_o="ACME Corp"     # Certificate Organization (O)</span>
+<span num="10">cert_ou="IT"           # Certificate Organizational Unit (OU)</span>
+<span num="11">cert_cn="${host_fqdn}" # Certificate Common Name (CN)</span>
+<span num="12">mkdir -p ${path}/{auth,certs,data}</span>
+<span num="13"></span>
+<span num="14">openssl req -newkey rsa:4096 -nodes -sha256 -keyout ${path}/certs/domain.key -x509 -days 3650 -out ${path}/certs/domain.crt -addext "subjectAltName = DNS:${host_fqdn}"</span>
+<span num="15">-subj "/C=${cert_c}/ST=${cert_s}/L=${cert_l}/O=${cert_o}/OU=${cert_ou}/CN=${cert_cn}"</span>
+<span num="16"></span>
+<span num="17">sudo cp ${path}/certs/domain.crt /etc/pki/ca-trust/source/anchors/</span>
+<span num="18">sudo update-ca-trust extract</span>
+<span num="19">htpasswd -bBc ${path}/auth/htpasswd dummy dummy</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">10</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>Pre-requisites: Image Sync</h3>
+        
+  <ul>
+  
+    <li>Start the Image Registry in local</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="6">podman create \</span>
+<span num="7">    --name ocpdiscon-registry \</span>
+<span num="8">    -p 5000:5000 \</span>
+<span num="9">    -e "REGISTRY_AUTH=htpasswd" \</span>
+<span num="10">    -e "REGISTRY_AUTH_HTPASSWD_REALM=Registry" \</span>
+<span num="11">    -e "REGISTRY_HTTP_SECRET=ALongRandomSecretForRegistry" \</span>
+<span num="12">    -e "REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd" \</span>
+<span num="13">    -e "REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt" \</span>
+<span num="14">    -e "REGISTRY_HTTP_TLS_KEY=/certs/domain.key" \</span>
+<span num="15">    -e "REGISTRY_COMPATIBILITY_SCHEMA1_ENABLED=true" \</span>
+<span num="16">    -v ${path}/data:/var/lib/registry:z \</span>
+<span num="17">    -v ${path}/auth:/auth:z \</span>
+<span num="18">    -v ${path}/certs:/certs:z \</span>
+<span num="19">    -v ${path}/conf/config.yml:/etc/docker/registry/config.yml:z \</span>
+</pre>
+</div>
+
+  
+  <p>
+    &gt; Apart from the desired configuration for your registry ensure the compatibility <code>schema1</code> it's enabled
+  </p>
+  
+
+      
+      <span class="pagenumber">11</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>Pre-requisites: Image Sync</h3>
+        
+  <ul>
+  
+    <li>Download the official oc client and fill the script vairables </li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="3"># Variables</span>
+<span num="4">export PULL_SECRET_JSON=/root/pull_secret.json</span>
+<span num="5">export LOCAL_REGISTRY=$(hostname):5000</span>
+<span num="6">export LOCAL_REPOSITORY=ocp4</span>
+<span num="7">export OCP_RELEASE=4.8.2-x86_64</span>
+<span num="8">export OCP_REGISTRY=quay.io/openshift-release-dev/ocp-release</span>
+<span num="9">export HTTP_PROXY=proxy.acme.lab:3128</span>
+<span num="10">export HTTPS_PROXY=proxy.acme.lab:3128</span>
+<span num="11">export NO_PROXY=bastion1.acme.lab</span>
+</pre>
+</div>
+
+  <ul>
+  
+    <li>Now execute the synchronization:</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="16">    oc adm -a ${PULL_SECRET_JSON} release mirror \</span>
+<span num="17">        --from=${OCP_REGISTRY}:${OCP_RELEASE} \</span>
+<span num="18">        --to=${LOCAL_REGISTRY}/${LOCAL_REPOSITORY} \</span>
+<span num="19">        --to-release-image=${LOCAL_REGISTRY}/${LOCAL_REPOSITORY}:${OCP_RELEASE}</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">12</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>Pre-requisites: Download RHCOS Resources</h3>
+        
+  
+  <p>
+    Once synced the container images, we need to download the RHCOS images for the OCP deployment, to do that we have a script to help you that extracts the information from the Openshift installer:
+  </p>
+  
+
+  <ul>
+  
+    <li>Download the Openshift-Baremetal Installer</li>
+  
+  </ul>
+
+  <div class="code">
+<pre><span num="38">    echo "----&gt; Downloading IPI Installer"</span>
+<span num="39">    oc adm --registry-config ${PULL_SECRET_JSON} release extract \</span>
+<span num="40">        --command=openshift-baremetal-install \</span>
+<span num="41">        --from=${OCP_REGISTRY}:${OCP_RELEASE} \</span>
+<span num="42">        --to .</span>
+</pre>
+</div>
+
+  
+  <p>
+    This will extract the IPI installer binary from the desired release you wanna install.
+<br>
+
+    Ensure you move to the OS path and change the execution permissions flag on the binary.
+  </p>
+  
+
+      
+      <span class="pagenumber">13</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>Pre-requisites: Download RHCOS Resources</h3>
+        
+  <ul>
+  
+    <li>Download the RHCOS Images</li>
+  
+  </ul>
+
+  
+  <p>
+    For that we use the Installer to extract the proper URLs for the selected release (which are hardcoded), this is a sample about how to extract them but you can find all needed resources in the <code>assets/src/release-sync-full.sh</code> script 
+  </p>
+  
+
+  
+  <div class="code"><pre># RHCOS Version
+openshift-baremetal-install coreos print-stream-json \
+| jq -r '.["architectures"]["x86_64"]["artifacts"]["metal"]["release"]'
+
+# RHCOS ISO URI
+openshift-baremetal-install coreos print-stream-json \
+| jq -r '.["architectures"]["x86_64"]["artifacts"]["metal"]["formats"]["iso"]["disk"]["location"]'</pre></div>
+  
+
+  
+  <p>
+    These ones and some more are necessary to install our OCP Hub Cluster, the script will help you to identify which ones are necessary and where to place them.
+  </p>
+  
+
+      
+      <span class="pagenumber">14</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>Pre-requisites: Download RHCOS Resources</h3>
+        
+  
+  <p>
+    Summarizing you will need these elements to place them into the <code>install-config.yaml</code> file:
+  </p>
+  
+
+  <ul>
+  
+    <li>QEMU URI</li>
+  
+    <li>QEMU SHA256 Uncompressed</li>
+  
+    <li>OPENSTACK URI</li>
+  
+    <li>OPENSTACK SHA256 Compressed</li>
+  
+  </ul>
+
+  
+  <p>
+    In the <code>install-config.yaml</code> format will be something like:
+  </p>
+  
+
+  
+  <div class="code"><pre>bootstrapOSImage: http://[2100:52:1302::1]/rhcos-qemu.x86_64.qcow2.gz?sha256=17868a1963ae2eae25...
+clusterOSImage: http://[2100:52:1302::1]/rhcos-openstack.x86_64.qcow2.gz?sha256=6ab5c6413f27527...</pre></div>
+  
+
+  
+  <p>
+    The IPv6 with the image name is our internal server hosting the images
+<br>
+
+    The <code>sha256=...</code> is the hash referenced on the binary
+  </p>
+  
+
+      
+      <span class="pagenumber">15</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>Pre-requisites: Networking</h3>
+        
+  
+  <p>
+    The networking part I think it's a bit tricky, because you need to know how IPv6 works in a generic network with the RA/NA/ND and so on, once you know that, you need apply it to your network checking with your network admin if some capabilities are disabled or not, let's get into it.
+  </p>
+  
+
+  
+  <p>
+    Important points to discuss:
+  </p>
+  
+
+  <ul>
+  
+    <li>DNSMASQ and RAs</li>
+  
+    <li>IPv6 and SLAAC Addresses</li>
+  
+    <li>PXE vs VirtualMedia</li>
+  
+    <li>BootMode: UEFI vs Legacy</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">16</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>DNSMASQ and RAs</h3>
+        
+  <ul>
+  
+    <li>Configure your network to send the RAs from RaDVD instead use the dnsmasq native one</li>
+  
+    <li><code>AdvOnLink</code> <code>on</code> and <code>AdvRouterAddr</code> <code>on</code> are mandatory options if not, NM will get confused</li>
+  
+    <li>use <b>ndptool</b> to to debug the RAs sent over the network</li>
+  
+  </ul>
+
+  
+  <div class="code"><pre>ndptool mon -i 'baremetal.154' -t ra</pre></div>
+  
+
+      
+      <span class="pagenumber">17</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>IPv6 and SLAAC Addresses</h3>
+        
+  <ul>
+  
+    <li>SLAAC addresses are the devil if you are not the network admin </li>
+  
+    <li>Check if it's enabled or not with <code>ndptool</code></li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Openshift_in_a_Disconnected_world_files/slaac_trace.png" height="200" width="950">
+</div>
+
+  <ul>
+  
+    <li>The issue here is, network devices will be always faster than a server so slaac will be configured first</li>
+  
+    <li>The routes and the dns resolution will be affected.</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">18</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>PXE vs VirtualMedia</h3>
+        
+  <ul>
+  
+    <li>PXE will involve a more complex net config and usually are not allowed in all companies</li>
+  
+    <li>This method involve L2 on the provisioning network</li>
+  
+    <li>Virtualmedia is the most easy way always that your BMC servers has redfish configured (we recommend Dell or HP)</li>
+  
+    <li>This method only will need L3 and does not need provisinoning network.</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">19</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>UEFI vs Legacy</h3>
+        
+  <ul>
+  
+    <li>This mainly affects to the drives on the node where OCP will be deployed</li>
+  
+    <li>If they are NVMe you need UEFI</li>
+  
+    <li>In other case you can choose Legacy but also works with UEFI</li>
+  
+    <li>UEFI boot should has secure boot disabled</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">20</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h2>The Install Config file</h2>
+      
+      <span class="pagenumber">21</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>The Install Config file</h3>
+        
+  
+  <p>
+    If you are deploying Openshift this is one of the main pieces let's check the relevant fields inside
+  </p>
+  
+
+  <div class="code">
+<pre><span num="3">networking:</span>
+<span num="4">  networkType: OVNKubernetes</span>
+<span num="5">  machineCIDR: 2100:52:1302::/64 </span>
+<span num="6">  clusterNetwork:</span>
+<span num="7">  - cidr: fd01::/48</span>
+<span num="8">    hostPrefix: 64</span>
+<span num="9">  serviceNetwork:</span>
+<span num="10">  - fd02::/112</span>
+<span num="11">metadata:</span>
+<span num="12">  name: mgmt-hub</span>
+<span num="13">compute:</span>
+<span num="14">- name: worker</span>
+<span num="15">  replicas: 0</span>
+<span num="16">controlPlane:</span>
+<span num="17">  name: master</span>
+<span num="18">  replicas: 3</span>
+<span num="19">  platform:</span>
+<span num="20">    baremetal: {}</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">22</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>The Install Config file</h3>
+        
+  <div class="code">
+<pre><span num="21">platform:</span>
+<span num="22">  baremetal:</span>
+<span num="23">    provisioningNetworkInterface: enp3s0f1</span>
+<span num="24">    provisioningNetworkCIDR: 2100:52:1307::/64</span>
+<span num="25">    provisioningBridge: "prov.157"</span>
+<span num="26">    externalBridge: "baremetal.152"</span>
+<span num="27">    bootstrapProvisioningIP: 2100:52:1307::2</span>
+<span num="28">    bootstrapOSImage: http://[2100:52:1302::1]/4.8.0-x86_64/rhcos-48.84.202106091622-0-qemu.x86_64.qcow2.gz?sha256=17868a1963ae2eae25fb16cb85871e08758066f5c5ee87276201c377cf25e418</span>
+<span num="29">    clusterOSImage: http://[2100:52:1302::1]/4.8.0-x86_64/rhcos-48.84.202106091622-0-openstack.x86_64.qcow2.gz?sha256=6ab5c6413f275277ea90f7dfc66424ef14993941ba3a9f3a43955ab268e7d76d</span>
+<span num="30">    apiVIP: 2100:52:1302::3</span>
+<span num="31">    ingressVIP: 2100:52:1302::2 </span>
+<span num="32">    hosts:</span>
+<span num="33">      - name: openshift-master-0</span>
+<span num="34">        role: master</span>
+<span num="35">        bmc:</span>
+<span num="36">          address:  ipmi://[2100:52:1300::81]</span>
+<span num="37">          username: teseo</span>
+<span num="38">          password: minos</span>
+<span num="39">        bootMACAddress: 18:DB:B1:C8:59:A3</span>
+<span num="40">        hardwareProfile: default</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">23</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>The Install Config file</h3>
+        
+  <div class="code">
+<pre><span num="58">imageContentSources:</span>
+<span num="59">- mirrors:</span>
+<span num="60">  - bm-cluster-1-hyper.e2e.bos.redhat.com:5000/ocp4</span>
+<span num="61">  source: quay.io/openshift-release-dev/ocp-release</span>
+</pre>
+</div>
+
+  <div class="code">
+<pre><span num="65">additionalTrustBundle: |</span>
+<span num="66">  -----BEGIN CERTIFICATE-----</span>
+<span num="67">  MIIGJzCCBA+gAwIBAgIUcuRdl0sEsCZMPWuE44snY/MLgcowDQYJKoZIhvcNAQEL</span>
+<span num="68">  BQAwgYgxCzAJBgNVBAYTAlVTMRYwFAYDVQQIDA1NYXNzYWNodXNldHRzMREwDwYD</span>
+</pre>
+</div>
+
+  <div class="code">
+<pre><span num="78">pullSecret: |</span>
+<span num="79">  {"auths":{"bm-cluster-1-hyper.e2e.bos.redhat.com:5000":{"auth":"a25pOmtuaQ==","email":"john.doe@redhat.com"}}}</span>
+<span num="80">sshKey: |</span>
+<span num="81">  ssh-rsa AAAAB3NzaC1yc2EAAACFGjqegPtQVtK1rH38ODIXRwCQlmCbClFQCMIR6nUn6wWCv5kcC9An7c9jg5Zjwu9g/umM0hQs1HX4nFGhg6AXyuD6jjbmrugKEO1NTjG9pKB+G6OSbbwrbydyd1ZonbrhTvN1rFSrKA+nKX2bseZDZh4ikBU4CPMpEG/F1AqBMlIyk= kni@bm-cluster-1-hyper.e2e.bos.redhat.com</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">24</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h2>CatalogSources and ICSPs</h2>
+      
+      <span class="pagenumber">25</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>CatalogSources</h3>
+        
+  
+  <p>
+    A CatalogSource is a K8s object that allow the OLM (Operator Lifecycle Manager) to consume PackageManifests included on that source.
+  </p>
+  
+
+  <ul>
+  
+    <li>Namespaced resources that live on the openshift-marketplace Namespace</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Openshift_in_a_Disconnected_world_files/catalogsource.png" height="80" width="1000">
+</div>
+
+  <div class="code">
+<pre><span num="5">  name: custom-community-operator-catalog-v4-8</span>
+<span num="6">  namespace: openshift-marketplace</span>
+<span num="7">spec:</span>
+<span num="8">  sourceType: grpc</span>
+<span num="9">  image: bastion.redhat.lab.com:5000/olm-index/community-operator-index:v4.8</span>
+<span num="10">  displayName: BM Lab - Community Operator - v4.8</span>
+<span num="11">  publisher: BM Lab Registry</span>
+<span num="12">  updateStrategy:</span>
+<span num="13">    registryPoll:</span>
+<span num="14">      interval: 30m</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">26</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>CatalogSources</h3>
+        
+  
+  <p>
+    The CatalogSource points to an index image which contains a serie of objects that K8s parse as <code>PackageManifests</code>
+  </p>
+  
+
+  <ul>
+  
+    <li>One CatalogSouce could contain 1 or N packagemanifest</li>
+  
+    <li>You can decide how many include in every CS</li>
+  
+    <li>OCP has 4 included by default pointing to Red Hat registry</li>
+  
+    <li>You can disable them in case of disconnected deployments</li>
+  
+    <li>The index image contains a DB whith the data for every PackageManifests included</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Openshift_in_a_Disconnected_world_files/packagemanifest.png">
+</div>
+
+      
+      <span class="pagenumber">27</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>CatalogSources</h3>
+        
+  <ul>
+  
+    <li>If you wanna inspect the content of an index, just run it on podman as you see</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Openshift_in_a_Disconnected_world_files/cs-serve.png" height="50" width="950">
+</div>
+
+  <ul>
+  
+    <li>Then in other terminal use <code>gprcurl</code> to check the content:</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./Openshift_in_a_Disconnected_world_files/cs-packages.png">
+</div>
+
+  
+  <p>
+    You can use <code>opm</code> and tool to create you own indexImages and then push it to your internal registry to be consumed for your own CatalogSources.
+  </p>
+  
+
+      
+      <span class="pagenumber">28</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>CatalogSources</h3>
+        
+  <ul>
+  
+    <li>Create the Index Image in local
+opm index prune --from-index registry.redhat.io/redhat/redhat-operator-index:v4.8 \
+--packages advanced-cluster-management,local-storage-operator... \
+--tag bm-cluster-1-hyper.e2e.bos.redhat.com:5000/olm-index/redhat-operator-index:v4.8
+</li>
+  
+    <li>Push Index image to your internal Registry
+podman push --tls-verify=false --authfile pull_secret.json \
+bm-cluster-1-hyper.e2e.bos.redhat.com:5000/olm-index/redhat-operator-index:v4.8</li>
+  
+  </ul>
+
+  <ul>
+  
+    <li>Sync the images listed on your Image from the source registry (RedHat) to your internal Registry
+oc adm catalog mirror --registry-config=pull_secret.json \
+bm-cluster-1-hyper.e2e.bos.redhat.com:5000/olm-index/redhat-operator-index:v4.8 \
+bm-cluster-1-hyper.e2e.bos.redhat.com:5000/olm</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">29</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>The ICSPs</h3>
+        
+  
+  <p>
+    Stands for ImageContentSourcePolicy and the concept behind this object it's easy to understand
+  </p>
+  
+
+  <ul>
+  
+    <li>It works at runtime level</li>
+  
+    <li>When crio/podman go to pull an image, it will look at the <code>/etc/containers/registries.conf</code> file</li>
+  
+    <li>If the requested image matches with and entry on that file it will go to the mirror in first step</li>
+  
+  </ul>
+
+  
+  <p>
+    ICSP it's a K8s object that create these entries on the OCP nodes.
+  </p>
+  
+
+  
+  <p>
+    The controller that manage this object is the MachineConfig Operator, so make sure you don't have it in degraded state
+  </p>
+  
+
+  
+  <div class="code"><pre>oc get mcp</pre></div>
+  
+
+      
+      <span class="pagenumber">30</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>The ICSPs</h3>
+        
+  
+  <p>
+    This is how looks like an ICSP
+  </p>
+  
+
+  <div class="code">
+<pre><span num="1">apiVersion: operator.openshift.io/v1alpha1</span>
+<span num="2">kind: ImageContentSourcePolicy</span>
+<span num="3">metadata:</span>
+<span num="4">  name: ztp-disconnected</span>
+<span num="5">spec:</span>
+<span num="6">  repositoryDigestMirrors:</span>
+<span num="7">  - mirrors:</span>
+<span num="8">    - bm-cluster-1-hyper.e2e.bos.redhat.com:5000/rhacm2</span>
+<span num="9">    source: quay.io/acm-d</span>
+</pre>
+</div>
+
+  
+  <p>
+    And the result on the <code>/etc/containers/registries.conf</code> file
+  </p>
+  
+
+  <div class="code">
+<pre><span num="1">unqualified-search-registries = ["registry.access.redhat.com", "docker.io"]</span>
+<span num="2">[[registry]]</span>
+<span num="3">  prefix = ""</span>
+<span num="4">  location = "quay.io/acm-d"</span>
+<span num="5">  mirror-by-digest-only = true</span>
+<span num="6">  [[registry.mirror]]</span>
+<span num="7">    location = "bm-cluster-1-hyper.e2e.bos.redhat.com:5000/rhacm2"</span>
+</pre>
+</div>
+
+      
+      <span class="pagenumber">31</span>
+      </article>
+  
+  
+  
+      <article class="background" style="background-image: url(&#39;assets/img/background.png&#39;)">
+      
+        <h3>The ICSPs</h3>
+        
+  
+  <p>
+    But Warning, you need to know these things:
+  </p>
+  
+
+  <ul>
+  
+    <li>If you have the MCO degraded ICSP will not be applied</li>
+  
+    <li>If you modify the OCP Nodes manually at this <code>registries.conf</code> file the MCO will enter on degraded state</li>
+  
+    <li>If you decide that you want to modify the node manually, you need to restart kubelet and crio after modify this file to make this work</li>
+  
+    <li>The flag <code>mirror-by-digest-only</code> <code>=</code> <code>true</code> will be exposed on the API on 4.9 and you will be able the modify this directly on the ICSP </li>
+  
+    <li>You should not include tags on the ICSP</li>
+  
+    <li>You can save some lines puting the namespace instead the whole image</li>
+  
+  </ul>
+
+      
+      <span class="pagenumber">32</span>
+      </article>
+  
+  
+
+      <article>
+        <h3>Thank you</h3>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    Juan Manuel Parrilla
+  </p>
+  
+
+  
+  <p>
+    Principal Software Engineer, Red Hat
+  </p>
+  
+<p class="link"><a href="mailto:jparrill@redhat.com" target="_blank">jparrill@redhat.com</a></p>
+          </div>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    Mario Vazquez Cebrian
+  </p>
+  
+
+  
+  <p>
+    Principal Software Engineer, Red Hat
+  </p>
+  
+<p class="link"><a href="mailto:mavazque@redhat.com" target="_blank">mavazque@redhat.com</a></p>
+          </div>
+        
+      </article>
+
+    <div class="slide-area" id="prev-slide-area"></div><div class="slide-area" id="next-slide-area"></div></section>
+
+    <div id="help" style="display: none;">
+      Use the left and right arrow keys or click the left and right
+      edges of the page to navigate between slides.<br>
+      (Press 'H' or navigate to hide this message.)
+    </div>
+
+    
+    <script src="./Openshift_in_a_Disconnected_world_files/play.js"></script>
+    
+
+    <script>
+      (function() {
+        
+        if (window["location"] && window["location"]["hostname"] == "talks.golang.org") {
+          var ga = document.createElement("script"); ga.type = "text/javascript"; ga.async = true;
+          ga.src = ("https:" == document.location.protocol ? "https://ssl" : "http://www") + ".google-analytics.com/ga.js";
+          var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ga, s);
+        }
+      })();
+    </script>
+  
+
+<link rel="stylesheet" type="text/css" href="./Openshift_in_a_Disconnected_world_files/css(1)"><link rel="stylesheet" type="text/css" href="./Openshift_in_a_Disconnected_world_files/styles.css"></body><nordvpn-contentscript-extension-mount-3.6.0><template shadowrootmode="open"><link rel="stylesheet" href="chrome-extension://fjoaledfpmneenckfbpdfhkmimnjocfa/csHttp.bundle.css"><div id="nordvpn-contentScript-extension-root-3.6.0" style="position: fixed; left: 0px; top: 0px; z-index: 2147483647;"></div></template></nordvpn-contentscript-extension-mount-3.6.0></html>

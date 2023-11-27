@@ -16,3 +16,5 @@ present
 This is the repository to configure the Prow cluster that I've used for this presentation:
 
 - [Prow Configuration repository](https://github.com/the-shadowmen/prow-devconf)
+
+or consume the pre-rendered version in the `render` folder
